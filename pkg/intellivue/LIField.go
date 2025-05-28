@@ -1,0 +1,35 @@
+package intellivue
+
+import (
+	"bytes"
+	"encoding/binary"
+)
+
+type LIField uint16
+
+func (l LIField) MarshalBinary() ([]byte, error) {
+	var buf bytes.Buffer
+
+	if l < 255 {
+		buf.WriteByte(byte(l))
+	} else {
+		buf.WriteByte(0xFF)
+		binary.Write(&buf, binary.BigEndian, uint16(l))
+	}
+
+	return buf.Bytes(), nil
+}
+
+func writeLIField(buf *bytes.Buffer, val LIField) {
+	data, _ := val.MarshalBinary()
+	buf.Write(data)
+}
+
+func (l LIField) Length() uint16 {
+	if l < 255 {
+		return 1
+	} else {
+		return 3
+	}
+}
+
