@@ -1,27 +1,24 @@
-package intellivue
+package structures
 
 import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+
+	. "github.com/Koshsky/Intellivue-api/pkg/intellivue/constants"
 )
 
-type PollProfileOptions uint32
-type PollProfileRevision uint32
+// type PollProfileOptions uint32 // Закомментировано после перемещения констант
+// type PollProfileRevision uint32 // Закомментировано после перемещения констант
 type RelativeTime uint32
 
-const (
-	P_OPT_DYN_CREATE_OBJECTS         PollProfileOptions = 0x40000000 // Dynamic Create Objects
-	P_OPT_DYN_DELETE_OBJECTS         PollProfileOptions = 0x20000000 // Dynamic Delete Objects
-)
-
 type PollProfileSupport struct {
-	PollProfileRevision PollProfileRevision  // If no matching version is found, the profile is not supported.
+	PollProfileRevision uint32 // Изменен тип на uint32 для соответствия константе
 	MinPollPeriod       RelativeTime
 	MaxMtuRx            uint32
 	MaxMtuTx            uint32
 	MaxBwTx             uint32
-	Options             PollProfileOptions
+	Options             uint32 // Изменен тип на uint32 для соответствия константам
 	OptionalPackages    *AttributeList
 }
 
@@ -32,7 +29,7 @@ func NewPollProfileSupport() *PollProfileSupport {
 		Value:       NewPollProfileExtension(),
 	})
 	optionalPackages.Count = 1
-	
+
 	return &PollProfileSupport{
 		PollProfileRevision: POLL_PROFILE_REV_0,
 		MinPollPeriod:       0x00000fa0,
@@ -77,13 +74,13 @@ func (p PollProfileSupport) MarshalBinary() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (p PollProfileSupport) Length() uint16 {
+func (p PollProfileSupport) Size() uint16 {
 	baseLength := uint16(24)
-	
+
 	if p.OptionalPackages != nil {
 		baseLength += 4 // Count(2) + Length(2)
-		baseLength += p.OptionalPackages.Length()
+		baseLength += p.OptionalPackages.Size()
 	}
-	
+
 	return baseLength
 }

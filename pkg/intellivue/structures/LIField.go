@@ -1,4 +1,4 @@
-package intellivue
+package structures
 
 import (
 	"bytes"
@@ -25,11 +25,10 @@ func writeLIField(buf *bytes.Buffer, val LIField) {
 	buf.Write(data)
 }
 
-func (l LIField) Length() uint16 {
+func (l LIField) Size() uint16 {
 	if l < 255 {
 		return 1
 	} else {
 		return 3
 	}
 }
-

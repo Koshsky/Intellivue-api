@@ -1,4 +1,4 @@
-package intellivue
+package structures
 
 import (
 	"bytes"
@@ -10,8 +10,8 @@ type AVAType struct {
 	Value       interface{}
 }
 
-func (a *AVAType) Length() uint16 {
-	return a.Value.(interface{ Length() uint16 }).Length()
+func (a *AVAType) Size() uint16 {
+	return a.Value.(interface{ Size() uint16 }).Size()
 }
 
 func (a *AVAType) MarshalBinary() ([]byte, error) {
@@ -20,7 +20,7 @@ func (a *AVAType) MarshalBinary() ([]byte, error) {
 	if err := binary.Write(&buf, binary.BigEndian, a.AttributeID); err != nil {
 		return nil, err
 	}
-	if err := binary.Write(&buf, binary.BigEndian, a.Length()); err != nil {
+	if err := binary.Write(&buf, binary.BigEndian, a.Size()); err != nil {
 		return nil, err
 	}
 

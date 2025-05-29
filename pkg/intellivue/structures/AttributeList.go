@@ -1,4 +1,4 @@
-package intellivue
+package structures
 
 import (
 	"bytes"
@@ -6,15 +6,15 @@ import (
 )
 
 type AttributeList struct {
-	Count           uint16
-	Value           []AVAType
+	Count            uint16
+	Value            []AVAType
 	OptionalPackages *AttributeList
 }
 
 func NewAttributeList() *AttributeList {
 	return &AttributeList{
-		Count:           0,
-		Value:           make([]AVAType, 0),
+		Count:            0,
+		Value:            make([]AVAType, 0),
 		OptionalPackages: nil,
 	}
 }
@@ -25,8 +25,8 @@ func (a *AttributeList) MarshalBinary() ([]byte, error) {
 	if err := binary.Write(&buf, binary.BigEndian, a.Count); err != nil {
 		return nil, err
 	}
-	
-	length := a.Length()
+
+	length := a.Size()
 	if err := binary.Write(&buf, binary.BigEndian, length); err != nil {
 		return nil, err
 	}
@@ -42,11 +42,11 @@ func (a *AttributeList) MarshalBinary() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (a *AttributeList) Length() uint16 {
+func (a *AttributeList) Size() uint16 {
 	totalLength := uint16(0)
 
 	for _, ava := range a.Value {
-		totalLength += ava.Length() + 4
+		totalLength += ava.Size() + 4
 	}
 
 	return totalLength

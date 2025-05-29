@@ -1,9 +1,14 @@
-package intellivue
+package packages
 
 import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"net"
+	"time"
+
+	. "github.com/Koshsky/Intellivue-api/pkg/intellivue/constants"
+	. "github.com/Koshsky/Intellivue-api/pkg/intellivue/structures"
 )
 
 type SessionHeader struct {
@@ -22,7 +27,7 @@ type AssocReqPresentationHeader struct {
 }
 
 type AssocReqUserData struct {
-	Length ASNLength
+	Length   ASNLength
 	UserData MDSEUserInfoStd
 }
 
@@ -54,8 +59,7 @@ func NewAssocReqMessage() *AssocReqMessage {
 		0x48, 0xCE, 0x14, 0x02, 0x01, 0x00, 0x00, 0x00, 0x02, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x61, 0x80, 0x30, 0x80, 0x02, 0x01, 0x01, 0xA0, 0x80, 0x60, 0x80, 0xA1, 0x80, 0x06, 0x0C, 0x2A,
 		0x86, 0x48, 0xCE, 0x14, 0x02, 0x01, 0x00, 0x00, 0x00, 0x03, 0x01, 0x00, 0x00, 0xBE, 0x80, 0x28,
-		0x80, 0x06, 0x0C, 0x2A, 0x86, 0x48, 0xCE, 0x14, 0x02, 0x01, 0x00, 0x00, 0x00, 0x01, 0x01, 0x02,
-		0x01, 0x02, 0x81,
+		0x80, 0x06, 0x0C, 0x2A, 0x86, 0x48, 0xCE, 0x14, 0x02, 0x01, 0x00, 0x00, 0x00, 0x01, 0x01, 0x02, 0x01, 0x02, 0x81,
 	}
 	trailerData := []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
 
@@ -78,13 +82,13 @@ func NewAssocReqMessage() *AssocReqMessage {
 			Value:       mdibObjSupport,
 		},
 	)
-	supportedAprofiles.Count = 2
+	supportedAprofiles.Count = uint16(len(supportedAprofiles.Value))
 
 	userData := &MDSEUserInfoStd{
 		ProtocolVersion:     MDDL_VERSION1,
 		NomenclatureVersion: NOMEN_VERSION,
 		FunctionalUnits:     0,
-		SystemType:          SYST_CLIENT, 
+		SystemType:          SYST_CLIENT,
 		StartupMode:         HOT_START,
 		OptionList:          NewAttributeList(),
 		SupportedAprofiles:  supportedAprofiles,
@@ -94,7 +98,7 @@ func NewAssocReqMessage() *AssocReqMessage {
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 	}
-	
+
 	if err != nil {
 		fmt.Println(err)
 		return nil
@@ -128,8 +132,9 @@ func (m *AssocReqMessage) MarshalBinary() ([]byte, error) {
 	}
 
 	presentationHeaderLen := len(m.PresentationHeader.Data) + len(userData) + 16
-	totalLength := len(m.SessionData.Data) + presentationHeaderLen
-	
+	sessionDataLen := len(m.SessionData.Data)
+	totalLength := sessionDataLen + presentationHeaderLen
+
 	if presentationHeaderLen > 255 {
 		totalLength += 4 // 3 bytes for length field
 	} else {
@@ -137,12 +142,25 @@ func (m *AssocReqMessage) MarshalBinary() ([]byte, error) {
 	}
 
 	buf.WriteByte(m.SessionHeader.Type)
-	writeLIField(&buf, LIField(totalLength))
+
+	// writeLIField(&buf, LIField(totalLength)) // Length - Заменяем на MarshalBinary
+	liFieldTotalLength, err := LIField(totalLength).MarshalBinary()
+	if err != nil {
+		return nil, fmt.Errorf("ошибка маршалинга LIField для общей длины: %w", err)
+	}
+	buf.Write(liFieldTotalLength)
 
 	buf.Write(m.SessionData.Data)
 
 	buf.WriteByte(m.PresentationHeader.Prefix)
-	writeLIField(&buf, LIField(presentationHeaderLen))
+
+	// writeLIField(&buf, LIField(pdataAPDULen)) // Length - Заменяем на MarshalBinary
+	liFieldPdataLen, err := LIField(presentationHeaderLen).MarshalBinary()
+	if err != nil {
+		return nil, fmt.Errorf("ошибка маршалинга LIField для длины P-DATA: %w", err)
+	}
+	buf.Write(liFieldPdataLen)
+
 	buf.Write(m.PresentationHeader.Data)
 
 	buf.Write(userData)
@@ -151,7 +169,6 @@ func (m *AssocReqMessage) MarshalBinary() ([]byte, error) {
 
 	return buf.Bytes(), nil
 }
-
 
 func hex2bytes(hexStr string) ([]byte, error) {
 	hexStr = bytes.NewBuffer(bytes.ReplaceAll(
@@ -186,11 +203,11 @@ func (m *AssocReqMessage) ShowInfo() error {
 
 	fmt.Printf("\n=== Optional Packages Details ===\n")
 	fmt.Printf("Count: %d\n", m.UserData.UserData.SupportedAprofiles.Count)
-	fmt.Printf("Length: %d\n", m.UserData.UserData.SupportedAprofiles.Length())
+	fmt.Printf("Length: %d\n", m.UserData.UserData.SupportedAprofiles.Size())
 	for i, ava := range m.UserData.UserData.SupportedAprofiles.Value {
 		fmt.Printf("\nAVA Type #%d:\n", i+1)
 		fmt.Printf("  Attribute ID: 0x%04x\n", ava.AttributeID)
-		fmt.Printf("  Length: %d\n", ava.Length())
+		fmt.Printf("  Length: %d\n", ava.Size())
 		if pollProfile, ok := ava.Value.(*PollProfileSupport); ok {
 			fmt.Printf("  Poll Profile Revision: 0x%08x\n", pollProfile.PollProfileRevision)
 			fmt.Printf("  Min Poll Period: %d\n", pollProfile.MinPollPeriod)
@@ -260,4 +277,155 @@ func (u *AssocReqUserData) MarshalBinary() ([]byte, error) {
 
 func (m *AssocReqMessage) serializeUserData() ([]byte, error) {
 	return m.UserData.MarshalBinary()
+}
+
+// AAREMessage представляет структуру сообщения AARE.
+type AAREMessage struct {
+	// TODO: Реализовать поля AAREMessage
+}
+
+// Size возвращает общую длину AAREMessage в байтах.
+func (a *AAREMessage) Size() uint16 {
+	// TODO: Реализовать расчет реального размера
+	return 0
+}
+
+// MarshalBinary кодирует структуру AAREMessage в бинарный формат.
+func (a *AAREMessage) MarshalBinary() ([]byte, error) {
+	// TODO: Реализовать маршалинг
+	return []byte{}, nil
+}
+
+// AARQMessage представляет структуру сообщения AARQ.
+type AARQMessage struct {
+	// TODO: Реализовать поля AARQMessage
+}
+
+// Size возвращает общую длину AARQMessage в байтах.
+func (a *AARQMessage) Size() uint16 {
+	// TODO: Реализовать расчет реального размера
+	return 0
+}
+
+// MarshalBinary кодирует структуру AARQMessage в бинарный формат.
+func (a *AARQMessage) MarshalBinary() ([]byte, error) {
+	// TODO: Реализовать маршалинг
+	return []byte{}, nil
+}
+
+// RLRQMessage представляет структуру сообщения RLRQ.
+type RLRQMessage struct {
+	// TODO: Реализовать поля RLRQMessage
+}
+
+// Size возвращает общую длину RLRQMessage в байтах.
+func (r *RLRQMessage) Size() uint16 {
+	// TODO: Реализовать расчет реального размера
+	return 0
+}
+
+// MarshalBinary кодирует структуру RLRQMessage в бинарный формат.
+func (r *RLRQMessage) MarshalBinary() ([]byte, error) {
+	// TODO: Реализовать маршалинг
+	return []byte{}, nil
+}
+
+// RLREMessage представляет структуру сообщения RLRE.
+type RLREMessage struct {
+	// TODO: Реализовать поля RLREMessage
+}
+
+// Size возвращает общую длину RLREMessage в байтах.
+func (r *RLREMessage) Size() uint16 {
+	// TODO: Реализовать расчет реального размера
+	return 0
+}
+
+// MarshalBinary кодирует структуру RLREMessage в бинарный формат.
+func (r *RLREMessage) MarshalBinary() ([]byte, error) {
+	// TODO: Реализовать маршалинг
+	return []byte{}, nil
+}
+
+// ABSEMessage представляет структуру сообщения ABSE.
+type ABSEMessage struct {
+	// TODO: Реализовать поля ABSEMessage
+}
+
+// Size возвращает общую длину ABSEMessage в байтах.
+func (a *ABSEMessage) Size() uint16 {
+	// TODO: Реализовать расчет реального размера
+	return 0
+}
+
+// MarshalBinary кодирует структуру ABSEMessage в бинарный формат.
+func (a *ABSEMessage) MarshalBinary() ([]byte, error) {
+	// TODO: Реализовать маршалинг
+	return []byte{}, nil
+}
+
+// Ассоциация - это логическое соединение между двумя приложениями.
+type Association struct {
+	RemoteAddr *net.TCPAddr
+	conn       *net.TCPConn
+	id         uint16
+}
+
+// NewAssociation создает новую ассоциацию с удаленным адресом.
+func NewAssociation(remoteAddr *net.TCPAddr) *Association {
+	// Генерация уникального ID для ассоциации (пример)
+	id := uint16(time.Now().UnixNano()%65535) + 1
+	return &Association{
+		RemoteAddr: remoteAddr,
+		id:         id,
+	}
+}
+
+// Connect устанавливает TCP-соединение с удаленным узлом.
+func (a *Association) Connect() error {
+	conn, err := net.DialTCP("tcp", nil, a.RemoteAddr)
+	if err != nil {
+		return fmt.Errorf("не удалось установить соединение: %w", err)
+	}
+	a.conn = conn
+	return nil
+}
+
+// SendAssocRequest отправляет запрос ассоциации.
+func (a *Association) SendAssocRequest() error {
+	assocReqMsg := NewAssocReqMessage()
+	assocReqMsgData, err := assocReqMsg.MarshalBinary()
+	if err != nil {
+		return fmt.Errorf("ошибка маршалинга AssocReqMessage: %w", err)
+	}
+
+	// Отправляем сообщение
+	_, err = a.conn.Write(assocReqMsgData)
+	if err != nil {
+		return fmt.Errorf("не удалось отправить запрос ассоциации: %w", err)
+	}
+
+	return nil
+}
+
+// ReadResponse читает ответ от удаленного узла.
+func (a *Association) ReadResponse() ([]byte, error) {
+	// TODO: Реализовать чтение ответа с учетом структуры сообщений
+	// Это потребует парсинга заголовков и содержимого APDU.
+	// Пока просто читаем некоторое количество байт.
+	buffer := make([]byte, 1024) // Примерный размер буфера
+	n, err := a.conn.Read(buffer)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка чтения ответа: %w", err)
+	}
+
+	return buffer[:n], nil
+}
+
+// Close закрывает соединение ассоциации.
+func (a *Association) Close() error {
+	if a.conn != nil {
+		return a.conn.Close()
+	}
+	return nil
 }
