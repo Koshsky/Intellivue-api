@@ -4,47 +4,36 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-
-	. "github.com/Koshsky/Intellivue-api/pkg/intellivue/constants"
+	"io"
 )
 
-// type PollProfileOptions uint32 // Закомментировано после перемещения констант
-// type PollProfileRevision uint32 // Закомментировано после перемещения констант
-type RelativeTime uint32
+type RelativeTime uint32        // TODO: move all defines to one file!
+type PollProfileRevision uint32 // TODO: move all defines to one file!
+type PollProfileOptions uint32  // TODO: move all defines to one file!
 
 type PollProfileSupport struct {
-	PollProfileRevision uint32 // Изменен тип на uint32 для соответствия константе
-	MinPollPeriod       RelativeTime
+	PollProfileRevision uint32
+	MinPollPeriod       uint32
 	MaxMtuRx            uint32
 	MaxMtuTx            uint32
 	MaxBwTx             uint32
-	Options             uint32 // Изменен тип на uint32 для соответствия константам
+	Options             uint32
 	OptionalPackages    *AttributeList
 }
 
-func NewPollProfileSupport() *PollProfileSupport {
-	optionalPackages := NewAttributeList()
-	optionalPackages.Value = append(optionalPackages.Value, AVAType{
-		AttributeID: NOM_ATTR_POLL_PROFILE_EXT,
-		Value:       NewPollProfileExtension(),
-	})
-	optionalPackages.Count = 1
+func (p PollProfileSupport) Size() uint16 {
+	size := uint16(24)
 
-	return &PollProfileSupport{
-		PollProfileRevision: POLL_PROFILE_REV_0,
-		MinPollPeriod:       0x00000fa0,
-		MaxMtuRx:            0x000005b0,
-		MaxMtuTx:            0x000005b0,
-		MaxBwTx:             0xFFFFFFFF,
-		Options:             P_OPT_DYN_CREATE_OBJECTS | P_OPT_DYN_DELETE_OBJECTS,
-		OptionalPackages:    optionalPackages,
+	if p.OptionalPackages != nil {
+		size += p.OptionalPackages.Size()
 	}
+
+	return size
 }
 
 func (p PollProfileSupport) MarshalBinary() ([]byte, error) {
 	var buf bytes.Buffer
 
-	// Записываем все поля в порядке их объявления
 	if err := binary.Write(&buf, binary.BigEndian, p.PollProfileRevision); err != nil {
 		return nil, fmt.Errorf("failed to write PollProfileRevision: %v", err)
 	}
@@ -64,7 +53,6 @@ func (p PollProfileSupport) MarshalBinary() ([]byte, error) {
 		return nil, fmt.Errorf("failed to write Options: %v", err)
 	}
 
-	// Сериализуем OptionalPackages
 	optPackagesData, err := p.OptionalPackages.MarshalBinary()
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal OptionalPackages: %v", err)
@@ -74,13 +62,30 @@ func (p PollProfileSupport) MarshalBinary() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (p PollProfileSupport) Size() uint16 {
-	baseLength := uint16(24)
-
-	if p.OptionalPackages != nil {
-		baseLength += 4 // Count(2) + Length(2)
-		baseLength += p.OptionalPackages.Size()
+func (p *PollProfileSupport) UnmarshalBinary(r io.Reader) error {
+	if err := binary.Read(r, binary.BigEndian, &p.PollProfileRevision); err != nil {
+		return fmt.Errorf("failed to read PollProfileRevision: %v", err)
+	}
+	if err := binary.Read(r, binary.BigEndian, &p.MinPollPeriod); err != nil {
+		return fmt.Errorf("failed to read MinPollPeriod: %v", err)
+	}
+	if err := binary.Read(r, binary.BigEndian, &p.MaxMtuRx); err != nil {
+		return fmt.Errorf("failed to read MaxMtuRx: %v", err)
+	}
+	if err := binary.Read(r, binary.BigEndian, &p.MaxMtuTx); err != nil {
+		return fmt.Errorf("failed to read MaxMtuTx: %v", err)
+	}
+	if err := binary.Read(r, binary.BigEndian, &p.MaxBwTx); err != nil {
+		return fmt.Errorf("failed to read MaxBwTx: %v", err)
+	}
+	if err := binary.Read(r, binary.BigEndian, &p.Options); err != nil {
+		return fmt.Errorf("failed to read Options: %v", err)
 	}
 
-	return baseLength
+	p.OptionalPackages = &AttributeList{}
+	if err := p.OptionalPackages.UnmarshalBinary(r); err != nil {
+		return fmt.Errorf("failed to unmarshal OptionalPackages: %v", err)
+	}
+
+	return nil
 }

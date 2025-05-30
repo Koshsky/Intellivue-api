@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/Koshsky/Intellivue-api/pkg/intellivue"
+	intellivue "github.com/Koshsky/Intellivue-api/pkg/intellivue/client"
 )
 
 // ApiServer handles HTTP requests and returns data from ComputerClient

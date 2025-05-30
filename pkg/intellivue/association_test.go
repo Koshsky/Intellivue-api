@@ -46,7 +46,4 @@ func TestAssocReqMessage(t *testing.T) {
 	}
 	PrintHexDump("Complete Message", fullMessage)
 
-	if err := msg.ShowInfo(); err != nil {
-		t.Fatalf("Failed to show message info: %v", err)
-	}
 }

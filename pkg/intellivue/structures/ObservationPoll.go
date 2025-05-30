@@ -4,30 +4,29 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"io"
 )
 
-// ObservationPoll представляет структуру данных для одного опроса наблюдения.
 type ObservationPoll struct {
-	ObjHandle  uint16
-	Attributes *AttributeList // Предполагается стандартная структура AttributeList с Count и Length
+	Handle     uint16
+	Attributes *AttributeList
 }
 
-// Size возвращает длину ObservationPoll в байтах.
-// Длина включает ObjHandle (2 байта) + длина AttributeList (если не nil).
 func (o *ObservationPoll) Size() uint16 {
-	length := uint16(2) // ObjHandle
+	length := uint16(2)
 	if o.Attributes != nil {
 		length += o.Attributes.Size()
+	} else {
+		length += 4
 	}
 	return length
 }
 
-// MarshalBinary кодирует структуру ObservationPoll в бинарный формат.
 func (o *ObservationPoll) MarshalBinary() ([]byte, error) {
 	buf := new(bytes.Buffer)
 
-	if err := binary.Write(buf, binary.BigEndian, o.ObjHandle); err != nil {
-		return nil, fmt.Errorf("ошибка записи ObjHandle: %w", err)
+	if err := binary.Write(buf, binary.BigEndian, o.Handle); err != nil {
+		return nil, fmt.Errorf("ошибка записи Handle: %w", err)
 	}
 
 	if o.Attributes != nil {
@@ -36,7 +35,22 @@ func (o *ObservationPoll) MarshalBinary() ([]byte, error) {
 			return nil, fmt.Errorf("ошибка маршалинга AttributeList: %w", err)
 		}
 		buf.Write(attributeData)
+	} else {
+		buf.Write([]byte{0x00, 0x00, 0x00, 0x00})
 	}
 
 	return buf.Bytes(), nil
+}
+
+func (op *ObservationPoll) UnmarshalBinary(r io.Reader) error {
+	if err := binary.Read(r, binary.BigEndian, &op.Handle); err != nil {
+		return fmt.Errorf("ошибка чтения Handle в ObservationPoll: %w", err)
+	}
+
+	op.Attributes = &AttributeList{}
+	if err := op.Attributes.UnmarshalBinary(r); err != nil {
+		return fmt.Errorf("ошибка парсинга Attributes в ObservationPoll: %w", err)
+	}
+
+	return nil
 }

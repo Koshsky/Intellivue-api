@@ -4,24 +4,37 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"io"
 )
 
-// SingleContextPoll представляет структуру данных для опроса в рамках одного контекста.
-// На основе предоставленного фрагмента кода.
 type SingleContextPoll struct {
-	ContextID       uint16
-	Count           uint16
-	Length          uint16
-	ObservationPoll uint8 // Тип из предоставленного фрагмента, может быть некорректным
+	ContextID uint16
+	PollInfo  []ObservationPoll
 }
 
-// Size возвращает общую длину SingleContextPoll в байтах.
-// Длина включает ContextID, Count, Length (каждое 2 байта) + ObservationPoll (1 байт).
+func (sp *SingleContextPoll) Count() uint16 {
+	if sp == nil {
+		return 0
+	}
+	return uint16(len(sp.PollInfo))
+}
+
+func (sp *SingleContextPoll) Length() uint16 {
+	if sp == nil || len(sp.PollInfo) == 0 {
+		return 0
+	}
+
+	var total uint16
+	for _, op := range sp.PollInfo {
+		total += op.Size()
+	}
+	return total
+}
+
 func (s *SingleContextPoll) Size() uint16 {
-	return 2 + 2 + 2 + 1 // ContextID + Count + Length + ObservationPoll
+	return 6 + s.Length() // ContexId + count + length + list
 }
 
-// MarshalBinary кодирует структуру SingleContextPoll в бинарный формат.
 func (s *SingleContextPoll) MarshalBinary() ([]byte, error) {
 	buf := new(bytes.Buffer)
 
@@ -29,22 +42,44 @@ func (s *SingleContextPoll) MarshalBinary() ([]byte, error) {
 		return nil, fmt.Errorf("ошибка записи ContextID: %w", err)
 	}
 
-	// Count и Length должны отражать последующие данные.
-	// В данном случае, только поле ObservationPoll.
-	count := uint16(1)         // Предполагаем, что ObservationPoll uint8 - это один элемент
-	contentLength := uint16(1) // Длина ObservationPoll uint8
-
-	if err := binary.Write(buf, binary.BigEndian, count); err != nil {
+	if err := binary.Write(buf, binary.BigEndian, s.Count()); err != nil {
 		return nil, fmt.Errorf("ошибка записи Count: %w", err)
 	}
 
-	if err := binary.Write(buf, binary.BigEndian, contentLength); err != nil {
+	if err := binary.Write(buf, binary.BigEndian, s.Length()); err != nil {
 		return nil, fmt.Errorf("ошибка записи Length: %w", err)
 	}
 
-	if err := binary.Write(buf, binary.BigEndian, s.ObservationPoll); err != nil {
-		return nil, fmt.Errorf("ошибка записи ObservationPoll: %w", err)
+	for _, op := range s.PollInfo {
+		opData, err := op.MarshalBinary()
+		if err != nil {
+			return nil, fmt.Errorf("ошибка маршалинга ObservationPoll: %w", err)
+		}
+		buf.Write(opData)
 	}
 
 	return buf.Bytes(), nil
+}
+
+func (s *SingleContextPoll) UnmarshalBinary(r io.Reader) error {
+	var obervationCount uint16
+	if err := binary.Read(r, binary.BigEndian, &obervationCount); err != nil {
+		return fmt.Errorf("failed to read observation count: %w", err)
+	}
+
+	var observationDataLength uint16
+	if err := binary.Read(r, binary.BigEndian, &observationDataLength); err != nil {
+		return fmt.Errorf("failed to read observation data length: %w", err)
+	}
+
+	listReader := io.LimitReader(r, int64(observationDataLength))
+
+	s.PollInfo = make([]ObservationPoll, obervationCount)
+	for i := uint16(0); i < obervationCount; i++ {
+		if err := s.PollInfo[i].UnmarshalBinary(listReader); err != nil {
+			return fmt.Errorf("failed to unmarshal ObservationPoll at index %d: %w", i, err)
+		}
+	}
+
+	return nil
 }

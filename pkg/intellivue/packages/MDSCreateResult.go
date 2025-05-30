@@ -3,75 +3,71 @@ package packages
 import (
 	"bytes"
 	"fmt"
+	"io"
 
 	. "github.com/Koshsky/Intellivue-api/pkg/intellivue/constants"
 	. "github.com/Koshsky/Intellivue-api/pkg/intellivue/structures"
 )
 
-// MDSCreateResult представляет структуру данных для результата операции создания,
-// состоящую из нескольких логических частей.
-type MDSCreateResult struct {
+type MDSCreateResult struct { // TODO: rename to MdsCreateEventResult
 	SPpdu
 	ROapdus
-	ROIVapdu
-	ManagedObjectId // Используем существующую структуру
-	CreateResultPayload
+	RORSapdu
+	EventReportResult
 }
 
-// Size возвращает общую длину MDSCreateResult в байтах.
 func (m *MDSCreateResult) Size() uint16 {
-	return m.SPpdu.Size() + m.ROapdus.Size() + m.ROIVapdu.Size() + m.ManagedObjectId.Size() + m.CreateResultPayload.Size()
+	return m.SPpdu.Size() + m.ROapdus.Size() + m.RORSapdu.Size() + m.EventReportResult.Size()
 }
 
-// MarshalBinary кодирует структуру MDSCreateResult в бинарный формат.
 func (m *MDSCreateResult) MarshalBinary() ([]byte, error) {
 	buf := new(bytes.Buffer)
 
-	// Обновляем поля длины во вложенных структурах перед маршалингом.
-	// Длина CreateResultPayload фиксирована (EventTime, EventType, Length).
-	m.CreateResultPayload.Length = m.CreateResultPayload.Size() - 2 // Exclude its own Length field
-
-	// Длина ROIVapdu: ManagedObjectId + CreateResultPayload
-	m.ROIVapdu.Length = m.ManagedObjectId.Size() + m.CreateResultPayload.Size()
-
-	// Длина ROapdus: ROIVapdu (без своего поля Length) + ее поле Length
-	m.ROapdus.Length = (m.ROIVapdu.Size() - 2) + m.ROIVapdu.Length // Subtract ROIVapdu.Length size, add its value
-
-	// Маршалинг каждой части в правильном порядке.
-	spduData, err := m.SPpdu.MarshalBinary()
+	spData, err := m.SPpdu.MarshalBinary()
 	if err != nil {
-		return nil, fmt.Errorf("ошибка маршалинга SPpdu: %w", err)
+		return nil, fmt.Errorf("failed to marshal SPpdu: %w", err)
 	}
-	buf.Write(spduData)
-
-	roapdusData, err := m.ROapdus.MarshalBinary()
+	buf.Write(spData)
+	roData, err := m.ROapdus.MarshalBinary()
 	if err != nil {
-		return nil, fmt.Errorf("ошибка маршалинга ROapdus: %w", err)
+		return nil, fmt.Errorf("failed to marshal ROapdus: %w", err)
 	}
-	buf.Write(roapdusData)
-
-	roivapduData, err := m.ROIVapdu.MarshalBinary()
+	buf.Write(roData)
+	rorsData, err := m.RORSapdu.MarshalBinary()
 	if err != nil {
-		return nil, fmt.Errorf("ошибка маршалинга ROIVapdu: %w", err)
+		return nil, fmt.Errorf("failed to marshal RORSapdu: %w", err)
 	}
-	buf.Write(roivapduData)
-
-	managedObjectData, err := m.ManagedObjectId.MarshalBinary()
+	buf.Write(rorsData)
+	eventData, err := m.EventReportResult.MarshalBinary()
 	if err != nil {
-		return nil, fmt.Errorf("ошибка маршалинга ManagedObjectId: %w", err)
+		return nil, fmt.Errorf("failed to marshal EventReportResult: %w", err)
 	}
-	buf.Write(managedObjectData)
-
-	createResultPayloadData, err := m.CreateResultPayload.MarshalBinary()
-	if err != nil {
-		return nil, fmt.Errorf("ошибка маршалинга CreateResultPayload: %w", err)
-	}
-	buf.Write(createResultPayloadData)
+	buf.Write(eventData)
 
 	return buf.Bytes(), nil
 }
 
-// NewMDSCreateResult создает новый экземпляр MDSCreateResult с предопределенными значениями.
+func (m *MDSCreateResult) UnmarshalBinary(r io.Reader) error {
+	if m == nil {
+		return fmt.Errorf("nil MDSCreateResult receiver")
+	}
+
+	if err := m.SPpdu.UnmarshalBinary(r); err != nil {
+		return fmt.Errorf("failed to unmarshal SPpdu: %w", err)
+	}
+	if err := m.ROapdus.UnmarshalBinary(r); err != nil {
+		return fmt.Errorf("failed to unmarshal ROapdus: %w", err)
+	}
+	if err := m.RORSapdu.UnmarshalBinary(r); err != nil {
+		return fmt.Errorf("failed to unmarshal RORSapdu: %w", err)
+	}
+	if err := m.EventReportResult.UnmarshalBinary(r); err != nil {
+		return fmt.Errorf("failed to unmarshal EventReportResult: %w", err)
+	}
+
+	return nil
+}
+
 func NewMDSCreateResult() *MDSCreateResult {
 	sp := SPpdu{
 		SessionID:  0xE100,
@@ -80,32 +76,32 @@ func NewMDSCreateResult() *MDSCreateResult {
 
 	roap := ROapdus{
 		ROType: RORS_APDU,
-		// Length будет рассчитана перед маршалингом
+		Length: 0x0014,
 	}
 
-	roiv := ROIVapdu{
+	roiv := RORSapdu{
 		InvokeID:    1,
 		CommandType: CMD_CONFIRMED_EVENT_REPORT,
-		// Length будет рассчитана перед маршалингом
+		Length:      0x000e,
 	}
 
-	managedObj := ManagedObjectId{
-		MObjClass: NOM_MOC_VMS_MDS,
-		ContextId: 0,
-		Handle:    0,
-	}
-
-	payload := CreateResultPayload{
-		EventTime: 0x00afbd00, // TODO: определить число
-		EventType: NOM_NOTI_MDS_CREAT,
-		// Length будет рассчитана перед маршалингом
+	eventReport := EventReportResult{
+		ManagedObject: ManagedObjectId{
+			MObjClass: NOM_MOC_VMS_MDS,
+			MObjInst: GlbHandle{
+				ContextID: 0,
+				Handle:    0,
+			},
+		},
+		CurrentTime: 0x0000,
+		EventType:   NOM_NOTI_MDS_CREAT,
+		Length:      0x0000,
 	}
 
 	return &MDSCreateResult{
-		SPpdu:               sp,
-		ROapdus:             roap,
-		ROIVapdu:            roiv,
-		ManagedObjectId:     managedObj,
-		CreateResultPayload: payload,
+		SPpdu:             sp,
+		ROapdus:           roap,
+		RORSapdu:          roiv,
+		EventReportResult: eventReport,
 	}
 }

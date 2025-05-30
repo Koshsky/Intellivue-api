@@ -4,33 +4,39 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"io"
 )
 
-// ROapdus представляет структуру ROapdus из MDSPollAction.
 type ROapdus struct {
 	ROType uint16
-	Length uint16 // Длина оставшейся части сообщения.
+	Length uint16 // длина оставшейся части сообщения
 }
 
-// Size возвращает длину ROapdus в байтах.
 func (r *ROapdus) Size() uint16 {
-	return 2 + 2 // ROType (2) + Length (2)
+	return 4
 }
 
-// MarshalBinary кодирует структуру ROapdus в бинарный формат.
 func (r *ROapdus) MarshalBinary() ([]byte, error) {
 	buf := new(bytes.Buffer)
 
 	if err := binary.Write(buf, binary.BigEndian, r.ROType); err != nil {
 		return nil, fmt.Errorf("ошибка записи ROType: %w", err)
 	}
-
-	// Length будет установлена при маршалинге родительской структуры (MDSPollAction)
-	// или структуры, которая ее включает (ROIVapdu), чтобы отразить длину последующих данных.
-	// Здесь мы просто записываем текущее значение.
 	if err := binary.Write(buf, binary.BigEndian, r.Length); err != nil {
 		return nil, fmt.Errorf("ошибка записи Length: %w", err)
 	}
 
 	return buf.Bytes(), nil
+}
+
+func (r *ROapdus) UnmarshalBinary(reader io.Reader) error {
+	if err := binary.Read(reader, binary.BigEndian, &r.ROType); err != nil {
+		return fmt.Errorf("ошибка чтения ROType: %w", err)
+	}
+
+	if err := binary.Read(reader, binary.BigEndian, &r.Length); err != nil {
+		return fmt.Errorf("ошибка чтения Length: %w", err)
+	}
+
+	return nil
 }

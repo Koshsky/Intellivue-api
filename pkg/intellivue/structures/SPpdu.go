@@ -4,20 +4,18 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"io"
 )
 
-// SPpdu представляет структуру SPpdu из MDSPollAction.
 type SPpdu struct {
 	SessionID  uint16
 	PContextID uint16
 }
 
-// Size возвращает длину SPpdu в байтах.
 func (s *SPpdu) Size() uint16 {
-	return 2 + 2 // SessionID (2) + PContextID (2)
+	return 4
 }
 
-// MarshalBinary кодирует структуру SPpdu в бинарный формат.
 func (s *SPpdu) MarshalBinary() ([]byte, error) {
 	buf := new(bytes.Buffer)
 
@@ -30,4 +28,16 @@ func (s *SPpdu) MarshalBinary() ([]byte, error) {
 	}
 
 	return buf.Bytes(), nil
+}
+
+func (s *SPpdu) UnmarshalBinary(reader io.Reader) error {
+	if err := binary.Read(reader, binary.BigEndian, &s.SessionID); err != nil {
+		return fmt.Errorf("ошибка чтения SessionID: %w", err)
+	}
+
+	if err := binary.Read(reader, binary.BigEndian, &s.PContextID); err != nil {
+		return fmt.Errorf("ошибка чтения PContextID: %w", err)
+	}
+
+	return nil
 }

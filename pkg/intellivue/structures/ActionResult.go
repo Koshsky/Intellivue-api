@@ -7,28 +7,25 @@ import (
 	"io"
 )
 
-type ActionArgument struct {
+type ActionResult struct {
 	ManagedObject ManagedObjectId
-	Scope         uint32
 	ActionType    uint16
-	Length        uint16 // Длина того, что следует за Length
+	Length        uint16 // длина добавленных данных
 }
 
-func (a *ActionArgument) Size() uint16 {
-	return a.ManagedObject.Size() + 4 + 2 + 2
+func (a *ActionResult) Size() uint16 {
+	return a.ManagedObject.Size() + 2*2
 }
 
-func (a *ActionArgument) MarshalBinary() ([]byte, error) {
+func (a *ActionResult) MarshalBinary() ([]byte, error) {
 	buf := new(bytes.Buffer)
 
-	objData, err := a.ManagedObject.MarshalBinary()
+	managedObjectBytes, err := a.ManagedObject.MarshalBinary()
 	if err != nil {
-		return nil, fmt.Errorf("ошибка маршалинга ManagedObject: %w", err)
+		return nil, fmt.Errorf("ошибка MarshalBinary для ManagedObject: %w", err)
 	}
-	buf.Write(objData)
-
-	if err := binary.Write(buf, binary.BigEndian, a.Scope); err != nil {
-		return nil, fmt.Errorf("ошибка записи Scope: %w", err)
+	if _, err := buf.Write(managedObjectBytes); err != nil {
+		return nil, fmt.Errorf("ошибка записи ManagedObject в буфер: %w", err)
 	}
 
 	if err := binary.Write(buf, binary.BigEndian, a.ActionType); err != nil {
@@ -42,16 +39,15 @@ func (a *ActionArgument) MarshalBinary() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (a *ActionArgument) UnmarshalBinary(reader io.Reader) error {
+func (a *ActionResult) UnmarshalBinary(reader io.Reader) error {
 	if err := a.ManagedObject.UnmarshalBinary(reader); err != nil {
 		return fmt.Errorf("ошибка UnmarshalBinary для ManagedObject: %w", err)
 	}
-	if err := binary.Read(reader, binary.BigEndian, &a.Scope); err != nil {
-		return fmt.Errorf("ошибка чтения Scope: %w", err)
-	}
+
 	if err := binary.Read(reader, binary.BigEndian, &a.ActionType); err != nil {
 		return fmt.Errorf("ошибка чтения ActionType: %w", err)
 	}
+
 	if err := binary.Read(reader, binary.BigEndian, &a.Length); err != nil {
 		return fmt.Errorf("ошибка чтения Length: %w", err)
 	}

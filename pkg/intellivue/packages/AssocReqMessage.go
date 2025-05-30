@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"net"
-	"time"
 
 	. "github.com/Koshsky/Intellivue-api/pkg/intellivue/constants"
 	. "github.com/Koshsky/Intellivue-api/pkg/intellivue/structures"
@@ -63,9 +61,23 @@ func NewAssocReqMessage() *AssocReqMessage {
 	}
 	trailerData := []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
 
-	supportedAprofiles := NewAttributeList()
+	supportedAprofiles := &AttributeList{}
 
-	pollProfileExt := NewPollProfileSupport()
+	pollProfileExt := &PollProfileSupport{
+		PollProfileRevision: POLL_PROFILE_REV_0,
+		MinPollPeriod:       0x00000fa0, // 4000 ms (4 seconds)
+		MaxMtuRx:            0x000005b0, // 1456 bytes
+		MaxMtuTx:            0x000005b0, // 1456 bytes
+		MaxBwTx:             0xFFFFFFFF, // Unlimited bandwidth
+		Options: P_OPT_DYN_CREATE_OBJECTS |
+			P_OPT_DYN_DELETE_OBJECTS,
+		OptionalPackages: &AttributeList{
+			Value: []AVAType{
+				NewPollProfileExtensionAVAType(),
+			},
+		},
+	}
+
 	mdibObjSupport := NewMDIBObjSupport()
 
 	supportedAprofiles.Value = append(
@@ -82,7 +94,6 @@ func NewAssocReqMessage() *AssocReqMessage {
 			Value:       mdibObjSupport,
 		},
 	)
-	supportedAprofiles.Count = uint16(len(supportedAprofiles.Value))
 
 	userData := &MDSEUserInfoStd{
 		ProtocolVersion:     MDDL_VERSION1,
@@ -90,7 +101,7 @@ func NewAssocReqMessage() *AssocReqMessage {
 		FunctionalUnits:     0,
 		SystemType:          SYST_CLIENT,
 		StartupMode:         HOT_START,
-		OptionList:          NewAttributeList(),
+		OptionList:          &AttributeList{},
 		SupportedAprofiles:  supportedAprofiles,
 	}
 
@@ -170,57 +181,6 @@ func (m *AssocReqMessage) MarshalBinary() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func hex2bytes(hexStr string) ([]byte, error) {
-	hexStr = bytes.NewBuffer(bytes.ReplaceAll(
-		bytes.ReplaceAll([]byte(hexStr), []byte(" "), []byte("")),
-		[]byte("\n"), []byte(""),
-	)).String()
-
-	var result []byte
-	for i := 0; i < len(hexStr); i += 2 {
-		b, err := hex2byte(hexStr[i : i+2])
-		if err != nil {
-			return nil, err
-		}
-		result = append(result, b)
-	}
-	return result, nil
-}
-
-func hex2byte(hexStr string) (byte, error) {
-	var result byte
-	_, err := fmt.Sscanf(hexStr, "%02x", &result)
-	return result, err
-}
-
-func (m *AssocReqMessage) ShowInfo() error {
-	fmt.Printf("\n=== User Data Details ===\n")
-	fmt.Printf("Protocol Version: 0x%08x\n", m.UserData.UserData.ProtocolVersion)
-	fmt.Printf("Nomenclature Version: 0x%08x\n", m.UserData.UserData.NomenclatureVersion)
-	fmt.Printf("Functional Units: 0x%08x\n", m.UserData.UserData.FunctionalUnits)
-	fmt.Printf("System Type: 0x%08x\n", m.UserData.UserData.SystemType)
-	fmt.Printf("Startup Mode: 0x%08x\n", m.UserData.UserData.StartupMode)
-
-	fmt.Printf("\n=== Optional Packages Details ===\n")
-	fmt.Printf("Count: %d\n", m.UserData.UserData.SupportedAprofiles.Count)
-	fmt.Printf("Length: %d\n", m.UserData.UserData.SupportedAprofiles.Size())
-	for i, ava := range m.UserData.UserData.SupportedAprofiles.Value {
-		fmt.Printf("\nAVA Type #%d:\n", i+1)
-		fmt.Printf("  Attribute ID: 0x%04x\n", ava.AttributeID)
-		fmt.Printf("  Length: %d\n", ava.Size())
-		if pollProfile, ok := ava.Value.(*PollProfileSupport); ok {
-			fmt.Printf("  Poll Profile Revision: 0x%08x\n", pollProfile.PollProfileRevision)
-			fmt.Printf("  Min Poll Period: %d\n", pollProfile.MinPollPeriod)
-			fmt.Printf("  Max MTU RX: %d\n", pollProfile.MaxMtuRx)
-			fmt.Printf("  Max MTU TX: %d\n", pollProfile.MaxMtuTx)
-			fmt.Printf("  Max BW TX: 0x%08x\n", pollProfile.MaxBwTx)
-			fmt.Printf("  Options: 0x%08x\n", pollProfile.Options)
-		}
-	}
-
-	return nil
-}
-
 func (m MDSEUserInfoStd) MarshalBinary() ([]byte, error) {
 	var buf bytes.Buffer
 
@@ -273,159 +233,4 @@ func (u *AssocReqUserData) MarshalBinary() ([]byte, error) {
 	buf.Write(userData)
 
 	return buf.Bytes(), nil
-}
-
-func (m *AssocReqMessage) serializeUserData() ([]byte, error) {
-	return m.UserData.MarshalBinary()
-}
-
-// AAREMessage представляет структуру сообщения AARE.
-type AAREMessage struct {
-	// TODO: Реализовать поля AAREMessage
-}
-
-// Size возвращает общую длину AAREMessage в байтах.
-func (a *AAREMessage) Size() uint16 {
-	// TODO: Реализовать расчет реального размера
-	return 0
-}
-
-// MarshalBinary кодирует структуру AAREMessage в бинарный формат.
-func (a *AAREMessage) MarshalBinary() ([]byte, error) {
-	// TODO: Реализовать маршалинг
-	return []byte{}, nil
-}
-
-// AARQMessage представляет структуру сообщения AARQ.
-type AARQMessage struct {
-	// TODO: Реализовать поля AARQMessage
-}
-
-// Size возвращает общую длину AARQMessage в байтах.
-func (a *AARQMessage) Size() uint16 {
-	// TODO: Реализовать расчет реального размера
-	return 0
-}
-
-// MarshalBinary кодирует структуру AARQMessage в бинарный формат.
-func (a *AARQMessage) MarshalBinary() ([]byte, error) {
-	// TODO: Реализовать маршалинг
-	return []byte{}, nil
-}
-
-// RLRQMessage представляет структуру сообщения RLRQ.
-type RLRQMessage struct {
-	// TODO: Реализовать поля RLRQMessage
-}
-
-// Size возвращает общую длину RLRQMessage в байтах.
-func (r *RLRQMessage) Size() uint16 {
-	// TODO: Реализовать расчет реального размера
-	return 0
-}
-
-// MarshalBinary кодирует структуру RLRQMessage в бинарный формат.
-func (r *RLRQMessage) MarshalBinary() ([]byte, error) {
-	// TODO: Реализовать маршалинг
-	return []byte{}, nil
-}
-
-// RLREMessage представляет структуру сообщения RLRE.
-type RLREMessage struct {
-	// TODO: Реализовать поля RLREMessage
-}
-
-// Size возвращает общую длину RLREMessage в байтах.
-func (r *RLREMessage) Size() uint16 {
-	// TODO: Реализовать расчет реального размера
-	return 0
-}
-
-// MarshalBinary кодирует структуру RLREMessage в бинарный формат.
-func (r *RLREMessage) MarshalBinary() ([]byte, error) {
-	// TODO: Реализовать маршалинг
-	return []byte{}, nil
-}
-
-// ABSEMessage представляет структуру сообщения ABSE.
-type ABSEMessage struct {
-	// TODO: Реализовать поля ABSEMessage
-}
-
-// Size возвращает общую длину ABSEMessage в байтах.
-func (a *ABSEMessage) Size() uint16 {
-	// TODO: Реализовать расчет реального размера
-	return 0
-}
-
-// MarshalBinary кодирует структуру ABSEMessage в бинарный формат.
-func (a *ABSEMessage) MarshalBinary() ([]byte, error) {
-	// TODO: Реализовать маршалинг
-	return []byte{}, nil
-}
-
-// Ассоциация - это логическое соединение между двумя приложениями.
-type Association struct {
-	RemoteAddr *net.TCPAddr
-	conn       *net.TCPConn
-	id         uint16
-}
-
-// NewAssociation создает новую ассоциацию с удаленным адресом.
-func NewAssociation(remoteAddr *net.TCPAddr) *Association {
-	// Генерация уникального ID для ассоциации (пример)
-	id := uint16(time.Now().UnixNano()%65535) + 1
-	return &Association{
-		RemoteAddr: remoteAddr,
-		id:         id,
-	}
-}
-
-// Connect устанавливает TCP-соединение с удаленным узлом.
-func (a *Association) Connect() error {
-	conn, err := net.DialTCP("tcp", nil, a.RemoteAddr)
-	if err != nil {
-		return fmt.Errorf("не удалось установить соединение: %w", err)
-	}
-	a.conn = conn
-	return nil
-}
-
-// SendAssocRequest отправляет запрос ассоциации.
-func (a *Association) SendAssocRequest() error {
-	assocReqMsg := NewAssocReqMessage()
-	assocReqMsgData, err := assocReqMsg.MarshalBinary()
-	if err != nil {
-		return fmt.Errorf("ошибка маршалинга AssocReqMessage: %w", err)
-	}
-
-	// Отправляем сообщение
-	_, err = a.conn.Write(assocReqMsgData)
-	if err != nil {
-		return fmt.Errorf("не удалось отправить запрос ассоциации: %w", err)
-	}
-
-	return nil
-}
-
-// ReadResponse читает ответ от удаленного узла.
-func (a *Association) ReadResponse() ([]byte, error) {
-	// TODO: Реализовать чтение ответа с учетом структуры сообщений
-	// Это потребует парсинга заголовков и содержимого APDU.
-	// Пока просто читаем некоторое количество байт.
-	buffer := make([]byte, 1024) // Примерный размер буфера
-	n, err := a.conn.Read(buffer)
-	if err != nil {
-		return nil, fmt.Errorf("ошибка чтения ответа: %w", err)
-	}
-
-	return buffer[:n], nil
-}
-
-// Close закрывает соединение ассоциации.
-func (a *Association) Close() error {
-	if a.conn != nil {
-		return a.conn.Close()
-	}
-	return nil
 }

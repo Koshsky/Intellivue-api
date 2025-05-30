@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"io"
 )
 
-// PollMdibDataReply представляет структуру данных ответа на опрос MDS.
 type PollMdibDataReply struct {
 	PollNumber    uint16
 	RelTimeStamp  uint32
@@ -14,25 +14,13 @@ type PollMdibDataReply struct {
 	Partition     uint16
 	Code          uint16
 	PolledAttrGrp uint16
-	PollInfoList  PollInfoList // Используем уже созданную структуру
+	PollInfoList  *PollInfoList
 }
 
-// Size возвращает общую длину PollMdibDataReply в байтах.
 func (p *PollMdibDataReply) Size() uint16 {
-	// Суммируем длины всех полей.
-	length := uint16(0)
-	length += 2 // PollNumber
-	length += 4 // RelTimeStamp
-	length += 8 // AbsTimeStamp
-	length += 2 // Partition
-	length += 2 // Code
-	length += 2 // PolledAttrGrp
-	length += p.PollInfoList.Size()
-
-	return length
+	return 2 + 4 + 8 + 2 + 2 + 2 + p.PollInfoList.Size()
 }
 
-// MarshalBinary кодирует структуру PollMdibDataReply в бинарный формат.
 func (p *PollMdibDataReply) MarshalBinary() ([]byte, error) {
 	buf := new(bytes.Buffer)
 
@@ -67,4 +55,34 @@ func (p *PollMdibDataReply) MarshalBinary() ([]byte, error) {
 	buf.Write(pollInfoListData)
 
 	return buf.Bytes(), nil
+}
+
+func (p *PollMdibDataReply) UnmarshalBinary(r io.Reader) error {
+	if err := binary.Read(r, binary.BigEndian, &p.PollNumber); err != nil {
+		return fmt.Errorf("failed to read PollMdibDataReply.PollNumber: %w", err)
+	}
+	if err := binary.Read(r, binary.BigEndian, &p.RelTimeStamp); err != nil {
+		return fmt.Errorf("failed to read PollMdibDataReply.RelTimeStamp: %w", err)
+	}
+	if err := binary.Read(r, binary.BigEndian, &p.AbsTimeStamp); err != nil {
+		return fmt.Errorf("failed to read PollMdibDataReply.AbsTimeStamp: %w", err)
+	}
+	if err := binary.Read(r, binary.BigEndian, &p.Partition); err != nil {
+		return fmt.Errorf("failed to read PollMdibDataReply.Partition: %w", err)
+	}
+	if err := binary.Read(r, binary.BigEndian, &p.Code); err != nil {
+		return fmt.Errorf("failed to read PollMdibDataReply.Code: %w", err)
+	}
+	if err := binary.Read(r, binary.BigEndian, &p.PolledAttrGrp); err != nil {
+		return fmt.Errorf("failed to read PollMdibDataReply.PolledAttrGrp: %w", err)
+	}
+
+	if p.PollInfoList == nil {
+		p.PollInfoList = &PollInfoList{}
+	}
+	if err := p.PollInfoList.UnmarshalBinary(r); err != nil {
+		return fmt.Errorf("failed to unmarshal PollMdibDataReply.PollInfoList: %w", err)
+	}
+
+	return nil
 }

@@ -4,47 +4,43 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"io"
 )
 
-// ManagedObjectId представляет структуру Managed Object ID.
 type ManagedObjectId struct {
 	MObjClass uint16
-	ContextId uint16 // Часто 0x0000
-	Handle    uint16 // Часто 0x0000, указывает на сам MDS объект
+	MObjInst  GlbHandle
 }
 
-// Size возвращает длину ManagedObjectId в байтах.
 func (m *ManagedObjectId) Size() uint16 {
-	return 3 * 2 // 3 поля типа uint16
+	return 2 + m.MObjInst.Size()
 }
 
-// MarshalBinary кодирует структуру ManagedObjectId в бинарный формат.
 func (m *ManagedObjectId) MarshalBinary() ([]byte, error) {
 	buf := new(bytes.Buffer)
+
 	if err := binary.Write(buf, binary.BigEndian, m.MObjClass); err != nil {
 		return nil, fmt.Errorf("ошибка записи MObjClass: %w", err)
 	}
-	if err := binary.Write(buf, binary.BigEndian, m.ContextId); err != nil {
-		return nil, fmt.Errorf("ошибка записи ContextId: %w", err)
+
+	mobjInstBytes, err := m.MObjInst.MarshalBinary()
+	if err != nil {
+		return nil, fmt.Errorf("ошибка MarshalBinary для MObjInst: %w", err)
 	}
-	if err := binary.Write(buf, binary.BigEndian, m.Handle); err != nil {
-		return nil, fmt.Errorf("ошибка записи Handle: %w", err)
+	if _, err := buf.Write(mobjInstBytes); err != nil {
+		return nil, fmt.Errorf("ошибка записи MObjInst в буфер: %w", err)
 	}
+
 	return buf.Bytes(), nil
 }
 
-// UnmarshalBinary декодирует бинарные данные в структуру ManagedObjectId.
-func (m *ManagedObjectId) UnmarshalBinary(data []byte) error {
-	buf := bytes.NewReader(data)
-
-	if err := binary.Read(buf, binary.BigEndian, &m.MObjClass); err != nil {
+func (m *ManagedObjectId) UnmarshalBinary(reader io.Reader) error {
+	if err := binary.Read(reader, binary.BigEndian, &m.MObjClass); err != nil {
 		return fmt.Errorf("ошибка чтения MObjClass: %w", err)
 	}
-	if err := binary.Read(buf, binary.BigEndian, &m.ContextId); err != nil {
-		return fmt.Errorf("ошибка чтения ContextId: %w", err)
-	}
-	if err := binary.Read(buf, binary.BigEndian, &m.Handle); err != nil {
-		return fmt.Errorf("ошибка чтения Handle: %w", err)
+
+	if err := m.MObjInst.UnmarshalBinary(reader); err != nil {
+		return fmt.Errorf("ошибка UnmarshalBinary для MObjInst: %w", err)
 	}
 
 	return nil

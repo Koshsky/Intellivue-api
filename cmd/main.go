@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/Koshsky/Intellivue-api/pkg/api"
-	"github.com/Koshsky/Intellivue-api/pkg/intellivue"
+	intellivue "github.com/Koshsky/Intellivue-api/pkg/intellivue/client"
 )
 
 func init() {
@@ -22,9 +22,9 @@ func main() {
 	log.Println("Starting Intellivue API application...")
 
 	// Configuration
-	host := "host1" // Replace with actual host
+	host := "host1"       // Replace with actual host
 	clientPort := "port1" // Replace with actual port
-	apiPort := "8989" // Replace with actual port
+	apiPort := "8989"     // Replace with actual port
 
 	log.Printf("Configuration loaded: host=%s, clientPort=%s, apiPort=%s", host, clientPort, apiPort)
 
@@ -42,9 +42,7 @@ func main() {
 
 	// Start ComputerClient
 	log.Println("Starting ComputerClient...")
-	if err := client.Run(ctx); err != nil {
-		log.Fatalf("Failed to start ComputerClient: %v", err)
-	}
+	client.Connect(ctx)
 	log.Println("ComputerClient started successfully")
 
 	// Start API server in a goroutine
