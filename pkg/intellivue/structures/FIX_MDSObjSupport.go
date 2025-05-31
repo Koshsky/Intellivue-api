@@ -6,6 +6,7 @@ import (
 	"fmt"
 )
 
+// TODO: что это ебать? определи где используется и что это за структура!
 type MDIBObjSupport struct {
 	parameter0  uint32
 	parameter1  uint32

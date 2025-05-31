@@ -7,9 +7,10 @@ import (
 	"io"
 )
 
+// Session/Presentation Header
 type SPpdu struct {
-	SessionID  uint16
-	PContextID uint16
+	SessionID  uint16 // TODO: contains a fixed value 0xE100
+	PContextID uint16 // negotiated in association phase
 }
 
 func (s *SPpdu) Size() uint16 {

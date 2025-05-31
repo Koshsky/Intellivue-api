@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/Koshsky/Intellivue-api/pkg/intellivue/constants"
 	"github.com/Koshsky/Intellivue-api/pkg/intellivue/packages"
+	. "github.com/Koshsky/Intellivue-api/pkg/intellivue/structures"
 )
 
 // SendPollNumericAction отправляет запрос MDS Poll Action для сбора числовых данных.
@@ -15,7 +15,7 @@ func (c *ComputerClient) SendPollNumericAction(invokeID uint16) error {
 
 	// Создаем сообщение MDSPollAction с InvokeID и кодом для числовых данных
 	// Используем constants.NOM_MOC_VMO_METRIC_NU в качестве кода, как вы указали.
-	msg := packages.NewMDSPollAction(invokeID, constants.NOM_MOC_VMO_METRIC_NU)
+	msg := packages.NewMDSPollAction(invokeID, NOM_MOC_VMO_METRIC_NU)
 
 	// Маршалинг сообщения в байты
 	dataToSend, err := msg.MarshalBinary()

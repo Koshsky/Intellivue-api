@@ -9,12 +9,12 @@ import (
 
 type ActionResult struct {
 	ManagedObject ManagedObjectId
-	ActionType    uint16
-	Length        uint16 // длина добавленных данных
+	ActionType    OIDType
+	Length        uint16
 }
 
 func (a *ActionResult) Size() uint16 {
-	return a.ManagedObject.Size() + 2*2
+	return a.ManagedObject.Size() + 4
 }
 
 func (a *ActionResult) MarshalBinary() ([]byte, error) {

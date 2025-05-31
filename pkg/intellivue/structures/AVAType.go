@@ -6,12 +6,10 @@ import (
 	"fmt"
 	"io"
 	"log"
-
-	. "github.com/Koshsky/Intellivue-api/pkg/intellivue/constants"
 )
 
 type AVAType struct {
-	AttributeID uint16
+	AttributeID OIDType
 	Length      uint16
 	Value       interface{}
 }

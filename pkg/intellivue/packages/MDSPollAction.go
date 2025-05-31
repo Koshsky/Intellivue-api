@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 
-	. "github.com/Koshsky/Intellivue-api/pkg/intellivue/constants"
 	. "github.com/Koshsky/Intellivue-api/pkg/intellivue/structures"
 )
 
@@ -20,7 +19,7 @@ func (m *MDSPollAction) Size() uint16 {
 	return m.SPpdu.Size() + m.ROapdus.Size() + m.ROIVapdu.Size() + m.ActionArgument.Size() + m.PollMdibDataReq.Size()
 }
 
-func NewMDSPollAction(invoke_id, code uint16) *MDSPollAction {
+func NewMDSPollAction(invoke_id uint16, code OIDType) *MDSPollAction {
 	sp := SPpdu{
 		SessionID:  0xE100,
 		PContextID: 2,

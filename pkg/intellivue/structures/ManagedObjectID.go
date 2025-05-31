@@ -8,7 +8,7 @@ import (
 )
 
 type ManagedObjectId struct {
-	MObjClass uint16
+	MObjClass OIDType
 	MObjInst  GlbHandle
 }
 

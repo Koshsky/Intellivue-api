@@ -8,7 +8,7 @@ import (
 )
 
 type SingleContextPoll struct {
-	ContextID uint16
+	ContextID MdsContext
 	PollInfo  []ObservationPoll
 }
 

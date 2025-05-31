@@ -9,11 +9,10 @@ import (
 
 type PollMdibDataReply struct {
 	PollNumber    uint16
-	RelTimeStamp  uint32
-	AbsTimeStamp  uint64
-	Partition     uint16
-	Code          uint16
-	PolledAttrGrp uint16
+	RelTimeStamp  RelativeTime
+	AbsTimeStamp  AbsoluteTime
+	PolledObjType TYPE
+	PolledAttrGrp OIDType
 	PollInfoList  *PollInfoList
 }
 
@@ -36,13 +35,11 @@ func (p *PollMdibDataReply) MarshalBinary() ([]byte, error) {
 		return nil, fmt.Errorf("ошибка записи AbsTimeStamp: %w", err)
 	}
 
-	if err := binary.Write(buf, binary.BigEndian, p.Partition); err != nil {
-		return nil, fmt.Errorf("ошибка записи Partition: %w", err)
+	PolledObjTypeData, err := p.PolledObjType.MarshalBinary()
+	if err != nil {
+		return nil, fmt.Errorf("ошибка маршалинга PolledObjType: %w", err)
 	}
-
-	if err := binary.Write(buf, binary.BigEndian, p.Code); err != nil {
-		return nil, fmt.Errorf("ошибка записи Code: %w", err)
-	}
+	buf.Write(PolledObjTypeData)
 
 	if err := binary.Write(buf, binary.BigEndian, p.PolledAttrGrp); err != nil {
 		return nil, fmt.Errorf("ошибка записи PolledAttrGrp: %w", err)
@@ -67,11 +64,8 @@ func (p *PollMdibDataReply) UnmarshalBinary(r io.Reader) error {
 	if err := binary.Read(r, binary.BigEndian, &p.AbsTimeStamp); err != nil {
 		return fmt.Errorf("failed to read PollMdibDataReply.AbsTimeStamp: %w", err)
 	}
-	if err := binary.Read(r, binary.BigEndian, &p.Partition); err != nil {
-		return fmt.Errorf("failed to read PollMdibDataReply.Partition: %w", err)
-	}
-	if err := binary.Read(r, binary.BigEndian, &p.Code); err != nil {
-		return fmt.Errorf("failed to read PollMdibDataReply.Code: %w", err)
+	if err := p.PolledObjType.UnmarshalBinary(r); err != nil {
+		return fmt.Errorf("failed to unmarshal PollMdibDataReply.PolledObjType: %w", err)
 	}
 	if err := binary.Read(r, binary.BigEndian, &p.PolledAttrGrp); err != nil {
 		return fmt.Errorf("failed to read PollMdibDataReply.PolledAttrGrp: %w", err)

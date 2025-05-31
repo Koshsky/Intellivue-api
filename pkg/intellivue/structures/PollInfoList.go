@@ -40,6 +40,7 @@ func (pil *PollInfoList) MarshalBinary() ([]byte, error) {
 	if err := binary.Write(buf, binary.BigEndian, pil.Count()); err != nil {
 		return nil, fmt.Errorf("ошибка записи Count: %w", err)
 	}
+
 	if err := binary.Write(buf, binary.BigEndian, pil.Length()); err != nil {
 		return nil, fmt.Errorf("ошибка записи Length: %w", err)
 	}

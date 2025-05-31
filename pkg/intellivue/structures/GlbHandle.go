@@ -8,8 +8,8 @@ import (
 )
 
 type GlbHandle struct {
-	ContextID uint16
-	Handle    uint16
+	ContextID MdsContext
+	Handle    Handle
 }
 
 func (g *GlbHandle) Size() uint16 {

@@ -8,7 +8,7 @@ import (
 )
 
 type ObservationPoll struct {
-	Handle     uint16
+	Handle     Handle
 	Attributes *AttributeList
 }
 

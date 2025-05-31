@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	"time"
-	// TODO: Проверить необходимые импорты
 )
 
 // CollectNumerics собирает и обрабатывает пакеты жизненно важных показателей.
@@ -45,7 +44,6 @@ func (c *ComputerClient) CollectNumerics(ctx context.Context) {
 }
 
 // CollectWaveforms собирает и обрабатывает пакеты данных осциллограмм.
-// TODO: Реализовать логику сбора и обработки пакетов Waveforms.
 func (c *ComputerClient) CollectWaveforms(ctx context.Context) {
 	log.Println("Запуск рутины CollectWaveforms...")
 	// Пример цикла, который будет остановлен при отмене контекста
@@ -63,7 +61,6 @@ func (c *ComputerClient) CollectWaveforms(ctx context.Context) {
 }
 
 // CollectAlarms собирает и обрабатывает пакеты тревог.
-// TODO: Реализовать логику сбора и обработки пакетов Alarms.
 func (c *ComputerClient) CollectAlarms(ctx context.Context) {
 	log.Println("Запуск рутины CollectAlarms...")
 	// Пример цикла, который будет остановлен при отмене контекста
@@ -82,7 +79,6 @@ func (c *ComputerClient) CollectAlarms(ctx context.Context) {
 }
 
 // sendPollActionAlarm отправляет запрос Polled Event Report для получения информации о тревогах.
-// TODO: Реализовать логику отправки запроса Polled Event Report.
 func (c *ComputerClient) sendPollActionAlarm() {
 	log.Println("Отправка запроса Polled Event Report...")
 	// Здесь будет логика создания и отправки пакета Polled Event Report

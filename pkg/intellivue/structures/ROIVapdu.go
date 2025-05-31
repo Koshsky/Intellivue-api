@@ -4,21 +4,20 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"io"
 )
 
-// ROIVapdu представляет структуру ROIVapdu из MDSPollAction.
+// Remote Operation Invoke
 type ROIVapdu struct {
-	InvokeID    uint16
-	CommandType uint16 // command_type := CMD_CONFIRMED_ACTION
-	Length      uint16 // Длина оставшейся части сообщения.
+	InvokeID    uint16  // identifies the transaction
+	CommandType CMDType // identifies type of command
+	Length      uint16  // no. of bytes in rest of message
 }
 
-// Size возвращает длину ROIVapdu в байтах.
 func (r *ROIVapdu) Size() uint16 {
-	return 2 + 2 + 2 // InvokeID (2) + CommandType (2) + Length (2)
+	return 6
 }
 
-// MarshalBinary кодирует структуру ROIVapdu в бинарный формат.
 func (r *ROIVapdu) MarshalBinary() ([]byte, error) {
 	buf := new(bytes.Buffer)
 
@@ -30,12 +29,25 @@ func (r *ROIVapdu) MarshalBinary() ([]byte, error) {
 		return nil, fmt.Errorf("ошибка записи CommandType: %w", err)
 	}
 
-	// Length будет установлена при маршалинге родительской структуры (MDSPollAction)
-	// или структуры, которая ее включает (ActionArgument), чтобы отразить длину последующих данных.
-	// Здесь мы просто записываем текущее значение.
 	if err := binary.Write(buf, binary.BigEndian, r.Length); err != nil {
 		return nil, fmt.Errorf("ошибка записи Length: %w", err)
 	}
 
 	return buf.Bytes(), nil
+}
+
+func (r *ROIVapdu) UnmarshalBinary(reader io.Reader) error {
+	if err := binary.Read(reader, binary.BigEndian, &r.InvokeID); err != nil {
+		return fmt.Errorf("ошибка чтения InvokeID: %w", err)
+	}
+
+	if err := binary.Read(reader, binary.BigEndian, &r.CommandType); err != nil {
+		return fmt.Errorf("ошибка чтения CommandType: %w", err)
+	}
+
+	if err := binary.Read(reader, binary.BigEndian, &r.Length); err != nil {
+		return fmt.Errorf("ошибка чтения Length: %w", err)
+	}
+
+	return nil
 }

@@ -7,14 +7,15 @@ import (
 	"io"
 )
 
+// Remote Operation Result
 type RORSapdu struct {
-	InvokeID    uint16
-	CommandType uint16
-	Length      uint16
+	InvokeID    uint16  // mirrored back from op. invoke
+	CommandType CMDType // identifies type of command
+	Length      uint16  // no of bytes in rest of message
 }
 
 func (r RORSapdu) Size() uint16 {
-	return 3 * 2
+	return 6
 }
 
 func (r *RORSapdu) MarshalBinary() ([]byte, error) {

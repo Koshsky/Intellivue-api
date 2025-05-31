@@ -7,15 +7,18 @@ import (
 	"io"
 )
 
+// The Event Report Result command is used as a response message to the Event Report message. It is
+// appended to the Operation Result message with the command_type
+// CMD_CONFIRMED_EVENT_REPORT.
 type EventReportResult struct {
-	ManagedObject ManagedObjectId
-	CurrentTime   RelativeTime
-	EventType     uint16
-	Length        uint16
+	ManagedObject ManagedObjectId // mirrored from EvRep
+	CurrentTime   RelativeTime    // result time stamp
+	EventType     OIDType         // identification of event
+	Length        uint16          // size of appended data
 }
 
 func (e *EventReportResult) Size() uint16 {
-	return e.ManagedObject.Size() + 4 + 2 + 2
+	return e.ManagedObject.Size() + 8
 }
 
 func (e *EventReportResult) MarshalBinary() ([]byte, error) {

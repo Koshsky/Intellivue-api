@@ -7,9 +7,10 @@ import (
 	"io"
 )
 
+// Remote Operation Header
 type ROapdus struct {
-	ROType uint16
-	Length uint16 // длина оставшейся части сообщения
+	ROType uint16 // ID for operation
+	Length uint16 // bytes to follow
 }
 
 func (r *ROapdus) Size() uint16 {

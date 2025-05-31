@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	. "github.com/Koshsky/Intellivue-api/pkg/intellivue/constants"
 	. "github.com/Koshsky/Intellivue-api/pkg/intellivue/structures"
 )
 

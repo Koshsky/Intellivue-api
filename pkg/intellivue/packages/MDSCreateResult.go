@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 
-	. "github.com/Koshsky/Intellivue-api/pkg/intellivue/constants"
 	. "github.com/Koshsky/Intellivue-api/pkg/intellivue/structures"
 )
 

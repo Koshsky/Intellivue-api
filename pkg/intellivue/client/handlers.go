@@ -6,9 +6,8 @@ import (
 	"fmt"
 	"log"
 
-	// . "github.com/Koshsky/Intellivue-api/pkg/intellivue/constants"
-	"github.com/Koshsky/Intellivue-api/pkg/intellivue/constants"
 	"github.com/Koshsky/Intellivue-api/pkg/intellivue/packages"
+	. "github.com/Koshsky/Intellivue-api/pkg/intellivue/structures"
 	"github.com/Koshsky/Intellivue-api/pkg/intellivue/utils"
 )
 
@@ -28,16 +27,16 @@ func (c *ComputerClient) handleDataExportPacket(ctx context.Context, data []byte
 	log.Printf("Пакет 0xE1, ro_type: 0x%04X", roType)
 
 	switch roType {
-	case constants.ROIV_APDU:
+	case ROIV_APDU:
 		return c.handleROIVAPDU(ctx, data)
 
-	case constants.RORS_APDU:
+	case RORS_APDU:
 		log.Println("Обнаружен пакет: Single Poll Data Result (RORS_APDU)")
 
-	case constants.ROLRS_APDU:
+	case ROLRS_APDU:
 		log.Println("Обнаружен пакет: Single Poll Data Result (Linked) (ROLRS_APDU)")
 
-	case constants.ROER_APDU:
+	case ROER_APDU:
 		log.Println("Обнаружен пакет: RO Error (ROER_APDU)")
 		utils.PrintHexDump("ROER_APDU", data)
 
@@ -55,12 +54,12 @@ func (c *ComputerClient) handleROIVAPDU(ctx context.Context, data []byte) error 
 		return fmt.Errorf("недостаточно данных для определения command_type в пакете ROIV_APDU")
 	}
 
-	commandType := binary.BigEndian.Uint16(data[10:12])
+	commandType := CMDType(binary.BigEndian.Uint16(data[10:12]))
 
 	log.Printf("ROIV APDU, command_type: 0x%04X", commandType)
 
 	switch commandType {
-	case constants.CMD_CONFIRMED_EVENT_REPORT:
+	case CMD_CONFIRMED_EVENT_REPORT:
 		log.Println("Обнаружен пакет: MDS CREATE EVENT (CMD_CONFIRMED_EVENT_REPORT).")
 
 		log.Println("Отправка MDS CREATE RESULT...")
@@ -73,13 +72,13 @@ func (c *ComputerClient) handleROIVAPDU(ctx context.Context, data []byte) error 
 			return fmt.Errorf("ошибка отправки MDS CREATE RESULT: %v", err)
 		}
 
-	case constants.CMD_EVENT_REPORT:
+	case CMD_EVENT_REPORT:
 		log.Println("Обнаружен пакет: CONNECT INDICATION EVENT (CMD_EVENT_REPORT).")
-	case constants.CMD_CONFIRMED_ACTION:
+	case CMD_CONFIRMED_ACTION:
 		log.Println("Обнаружен пакет: SINGLE POLL DATA REQUEST / EXTENDED POLL DATA REQUEST (CMD_CONFIRMED_ACTION).")
-	case constants.CMD_GET:
+	case CMD_GET:
 		log.Println("Обнаружен пакет: GET PRIORITY LIST REQUEST (CMD_GET).")
-	case constants.CMD_CONFIRMED_SET:
+	case CMD_CONFIRMED_SET:
 		log.Println("Обнаружен пакет: CMD_CONFIRMED_SET.")
 	default:
 		log.Printf("Обнаружен пакет ROIV_APDU с неизвестным command_type: 0x%04X.", commandType)

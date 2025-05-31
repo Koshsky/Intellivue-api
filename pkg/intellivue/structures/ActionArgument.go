@@ -7,11 +7,16 @@ import (
 	"io"
 )
 
+const (
+	NOM_ACT_POLL_MDIB_DATA     OIDType = 0x0c16
+	NOM_ACT_POLL_MDIB_DATA_EXT OIDType = 0xf13b
+)
+
 type ActionArgument struct {
 	ManagedObject ManagedObjectId
-	Scope         uint32
-	ActionType    uint16
-	Length        uint16 // Длина того, что следует за Length
+	Scope         uint32  //fixed value 0
+	ActionType    OIDType // identification of method
+	Length        uint16
 }
 
 func (a *ActionArgument) Size() uint16 {

@@ -7,17 +7,25 @@ import (
 	"io"
 )
 
-type RelativeTime uint32        // TODO: move all defines to one file!
-type PollProfileRevision uint32 // TODO: move all defines to one file!
-type PollProfileOptions uint32  // TODO: move all defines to one file!
+type PollProfileRevision uint32
+type PollProfileOptions uint32
 
+const (
+	POLL_PROFILE_REV_0 PollProfileRevision = 0x80000000
+
+	P_OPT_DYN_CREATE_OBJECTS PollProfileOptions = 0x40000000
+	P_OPT_DYN_DELETE_OBJECTS PollProfileOptions = 0x20000000
+)
+
+// The Poll Profile Support attribute contains the specification
+// of the polling profile supported by the system.
 type PollProfileSupport struct {
-	PollProfileRevision uint32
-	MinPollPeriod       uint32
+	PollProfileRevision PollProfileRevision
+	MinPollPeriod       RelativeTime
 	MaxMtuRx            uint32
 	MaxMtuTx            uint32
 	MaxBwTx             uint32
-	Options             uint32
+	Options             PollProfileOptions
 	OptionalPackages    *AttributeList
 }
 
@@ -66,18 +74,23 @@ func (p *PollProfileSupport) UnmarshalBinary(r io.Reader) error {
 	if err := binary.Read(r, binary.BigEndian, &p.PollProfileRevision); err != nil {
 		return fmt.Errorf("failed to read PollProfileRevision: %v", err)
 	}
+
 	if err := binary.Read(r, binary.BigEndian, &p.MinPollPeriod); err != nil {
 		return fmt.Errorf("failed to read MinPollPeriod: %v", err)
 	}
+
 	if err := binary.Read(r, binary.BigEndian, &p.MaxMtuRx); err != nil {
 		return fmt.Errorf("failed to read MaxMtuRx: %v", err)
 	}
+
 	if err := binary.Read(r, binary.BigEndian, &p.MaxMtuTx); err != nil {
 		return fmt.Errorf("failed to read MaxMtuTx: %v", err)
 	}
+
 	if err := binary.Read(r, binary.BigEndian, &p.MaxBwTx); err != nil {
 		return fmt.Errorf("failed to read MaxBwTx: %v", err)
 	}
+
 	if err := binary.Read(r, binary.BigEndian, &p.Options); err != nil {
 		return fmt.Errorf("failed to read Options: %v", err)
 	}
