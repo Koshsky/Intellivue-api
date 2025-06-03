@@ -15,7 +15,7 @@ func TestRunClientAndPoll(t *testing.T) {
 
 	if err := client.Connect(ctxTest); err != nil {
 		cancelTest()
-		t.Fatalf("Ошибка при установке соединения: %v", err)
+		t.Fatalf("error when establishing connectionы: %v", err)
 	}
 
 	doneCollecting := make(chan struct{})

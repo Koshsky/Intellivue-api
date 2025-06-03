@@ -22,12 +22,12 @@ func (c *ComputerClient) CollectNumerics(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			c.SafeLog("CollectNumerics: Контекст отменен, завершение рутины.")
+			c.SafeLog("CollectNumerics: Context canceled, goroutine ending.")
 			return
 		case <-ticker.C:
-			c.SafeLog("Отправка очередного SinglePollDataRequest запроса по таймеру.")
+			c.SafeLog("Sending next SinglePollDataRequest by timer.")
 			if err := c.SendPollNumericAction(invokeID); err != nil {
-				c.SafeLog("Ошибка при отправке SinglePollDataRequest с InvokeID %d: %v", invokeID, err)
+				c.SafeLog("Error sending SinglePollDataRequest with InvokeID %d: %v", invokeID, err)
 			}
 			invokeID++
 		}
@@ -35,12 +35,12 @@ func (c *ComputerClient) CollectNumerics(ctx context.Context) {
 }
 
 func (c *ComputerClient) CollectWaveforms(ctx context.Context) {
-	c.SafeLog("Запуск рутины CollectWaveforms...")
+	c.SafeLog("Starting CollectWaveforms goroutine...")
 	// Пример цикла, который будет остановлен при отмене контекста
 	for {
 		select {
 		case <-ctx.Done():
-			c.SafeLog("СollectWaveforms: Контекст отменен, завершение рутины.")
+			c.SafeLog("CollectWaveforms: Context canceled, goroutine ending.")
 			return
 		default:
 			time.Sleep(5 * time.Second)
@@ -63,12 +63,12 @@ func (c *ComputerClient) CollectAlarms(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			c.SafeLog("CollectAlarms: Контекст отменен, завершение рутины.")
+			c.SafeLog("CollectAlarms: Context canceled, goroutine ending.")
 			return
 		case <-ticker.C:
-			c.SafeLog("Отправка очередного SinglePollDataRequest запроса по таймеру.")
+			c.SafeLog("Sending next SinglePollDataRequest by timer.")
 			if err := c.SendPollAlarmAction(invokeID); err != nil {
-				c.SafeLog("Ошибка при отправке SinglePollDataRequest с InvokeID %d: %v", invokeID, err)
+				c.SafeLog("Error sending SinglePollDataRequest with InvokeID %d: %v", invokeID, err)
 			}
 			invokeID++
 		}

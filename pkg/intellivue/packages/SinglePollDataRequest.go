@@ -110,19 +110,19 @@ func (s *SinglePollDataRequest) UnmarshalBinary(r io.Reader) error {
 	}
 
 	if err := s.SPpdu.UnmarshalBinary(r); err != nil {
-		return fmt.Errorf("ошибка UnmarshalBinary для SPpdu: %w", err)
+		return fmt.Errorf("failed to unmarshal SPpdu: %w", err)
 	}
 	if err := s.ROapdus.UnmarshalBinary(r); err != nil {
-		return fmt.Errorf("ошибка UnmarshalBinary для ROapdus: %w", err)
+		return fmt.Errorf("failed to unmarshal ROapdus: %w", err)
 	}
 	if err := s.ROIVapdu.UnmarshalBinary(r); err != nil {
-		return fmt.Errorf("ошибка UnmarshalBinary для ROIVapdu: %w", err)
+		return fmt.Errorf("failed to unmarshal ROIVapdu: %w", err)
 	}
 	if err := s.ActionArgument.UnmarshalBinary(r); err != nil {
-		return fmt.Errorf("ошибка UnmarshalBinary для ActionArgument: %w", err)
+		return fmt.Errorf("failed to unmarshal ActionArgument: %w", err)
 	}
 	if err := s.PollMdibDataReq.UnmarshalBinary(r); err != nil {
-		return fmt.Errorf("ошибка UnmarshalBinary для PollMdibDataReq: %w", err)
+		return fmt.Errorf("failed to unmarshal PollMdibDataReq: %w", err)
 	}
 
 	return nil

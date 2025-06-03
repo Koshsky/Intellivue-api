@@ -68,15 +68,15 @@ func (c *ComputerClient) Connect(ctx context.Context) error {
 	addr := fmt.Sprintf("%s:%s", c.serverAddr, c.serverPort)
 	udpAddr, err := net.ResolveUDPAddr("udp", addr)
 	if err != nil {
-		return fmt.Errorf("ошибка разрешения UDP адреса: %w", err)
+		return fmt.Errorf("error resolving UDP address: %w", err)
 	}
 
 	conn, err := net.DialUDP("udp", nil, udpAddr)
 	if err != nil {
-		return fmt.Errorf("ошибка создания UDP соединения: %w", err)
+		return fmt.Errorf("error creating UDP connection: %w", err)
 	}
 	c.conn = conn
-	c.SafeLog("UDP соединение установлено.")
+	c.SafeLog("UDP connection established.")
 
 	// Запускаем горутину для прослушивания входящих пакетов
 	c.wg.Add(1) // Увеличиваем счетчик WaitGroup для runPacketListener
@@ -91,16 +91,16 @@ func (c *ComputerClient) Connect(ctx context.Context) error {
 	assocReq, err := packages.NewAssocReqMessage().MarshalBinary()
 	if err != nil {
 		c.Close() // Закрываем соединение при ошибке создания сообщения
-		return fmt.Errorf("ошибка при создании сообщения AssociationRequest: %w", err)
+		return fmt.Errorf("error creating AssociationRequest message: %w", err)
 	}
 
 	// Отправка запроса ассоциации
 	if err := c.sendData(assocReq); err != nil {
 		c.Close() // Закрываем соединение при ошибке отправки
-		return fmt.Errorf("ошибка отправки запроса ассоциации: %w", err)
+		return fmt.Errorf("error sending AssociationRequest: %w", err)
 	}
 
-	c.SafeLog("AssociationRequest отправлен. Ожидание ответа...")
+	c.SafeLog("AssociationRequest sent. Waiting for response...")
 
 	// TODO: Реализовать ожидание Association Response в runPacketListener
 	// Сейчас Connect возвращает успешно после отправки запроса, что неверно.
@@ -113,16 +113,16 @@ func (c *ComputerClient) Connect(ctx context.Context) error {
 // Close gracefully закрывает соединение и останавливает все горутины клиента.
 func (c *ComputerClient) Close() error {
 	c.closeOnce.Do(func() {
-		c.SafeLog("Запуск процедуры закрытия клиента...")
+		c.SafeLog("Starting client shutdown procedure...")
 
 		c.cancel()
 		c.wg.Wait()
-		c.SafeLog("Все горутины завершены.")
+		c.SafeLog("All goroutines completed.")
 
 		if c.conn != nil {
 			c.conn.Close()
 			c.conn = nil
-			c.SafeLog("Сетевое соединение закрыто.")
+			c.SafeLog("Network connection closed.")
 		}
 
 		// Закрываем только реально существующий канал
@@ -130,7 +130,7 @@ func (c *ComputerClient) Close() error {
 			close(c.sendChan)
 		}
 
-		c.SafeLog("Процедура закрытия клиента завершена.")
+		c.SafeLog("Client shutdown procedure completed.")
 	})
 	return nil
 }
@@ -138,22 +138,22 @@ func (c *ComputerClient) Close() error {
 // runPacketSender отправляет пакеты из sendChan на устройство.
 func (c *ComputerClient) runPacketSender() {
 	defer c.wg.Done() // Уменьшаем счетчик WaitGroup при завершении горутины
-	c.SafeLog("Запуск Packet Sender рутины...")
+	c.SafeLog("Starting Packet Sender goroutine...")
 
 	for {
 		select {
 		case data, ok := <-c.sendChan:
 			if !ok { // Канал закрыт
-				c.SafeLog("Packet Sender: Канал отправки закрыт, завершение рутины.")
+				c.SafeLog("Packet Sender: Sending channel closed, goroutine ending.")
 				return
 			}
 			// TODO: Добавить мьютекс для записи в соединение, если multiple goroutines могут писать
 			if err := c.sendData(data); err != nil {
-				c.SafeLog("Ошибка при отправке данных: %v", err)
+				c.SafeLog("Error sending data: %v", err)
 				// TODO: Обработка ошибок отправки (переподключение?)
 			}
 		case <-c.ctx.Done():
-			c.SafeLog("Packet Sender: Контекст отменен, завершение рутины.")
+			c.SafeLog("Packet Sender: Context canceled, goroutine ending.")
 			return
 		}
 	}
@@ -162,7 +162,7 @@ func (c *ComputerClient) runPacketSender() {
 // sendData отправляет байты данных в сетевое соединение.
 func (c *ComputerClient) sendData(data []byte) error {
 	if c.conn == nil {
-		return fmt.Errorf("соединение не установлено")
+		return fmt.Errorf("connection not established")
 	}
 	// TODO: Установить таймаут записи для UDP
 	_, err := c.conn.Write(data)
@@ -172,11 +172,11 @@ func (c *ComputerClient) sendData(data []byte) error {
 // runPacketListener прослушивает входящие пакеты от устройства по UDP и сразу обрабатывает их.
 func (c *ComputerClient) runPacketListener() {
 	defer c.wg.Done()
-	c.SafeLog("Запуск Packet Listener рутины...")
+	c.SafeLog("Starting Packet Listener goroutine...")
 
 	conn, ok := c.conn.(*net.UDPConn)
 	if !ok {
-		c.SafeLog("runPacketListener: Ошибка: соединение не является UDP.")
+		c.SafeLog("runPacketListener: Error: connection is not UDP.")
 		return
 	}
 
@@ -192,7 +192,7 @@ func (c *ComputerClient) runPacketListener() {
 		}
 		data := make([]byte, n)
 		copy(data, buffer[:n])
-		c.SafeLog("runPacketListener: Получен пакет, первый байт: 0x%02X", data[0])
+		c.SafeLog("runPacketListener: Received packet, first byte: 0x%02X", data[0])
 		c.handleDataExportPacket(data)
 	}
 }
@@ -208,20 +208,20 @@ func (c *ComputerClient) handleDataExportPacket(data []byte) {
 	firstByte := data[0]
 	switch firstByte {
 	case 0x0E:
-		c.SafeLog("runPacketListener: Получен Association Response (0x0E)")
+		c.SafeLog("runPacketListener: Received Association Response (0x0E)")
 		c.isAssociationDone = true
 	case 0x19:
-		c.SafeLog("runPacketListener: Получен пакет Association Abort (0x19).")
+		c.SafeLog("runPacketListener: Received Association Abort (0x19).")
 		c.Close()
 		return
 	case 0x0C:
-		c.SafeLog("runPacketListener: Получен пакет Association Refuse (0x0C).")
+		c.SafeLog("runPacketListener: Received Association Refuse (0x0C).")
 		c.Close()
 		return
 	case 0xE1:
-		c.SafeLog("runPacketListener: Получен Data Export Protocol пакет (0xE1). Обработка...")
+		c.SafeLog("runPacketListener: Received Data Export Protocol packet (0xE1). Processing...")
 		if len(data) < 6 {
-			c.SafeLog("Data Export Protocol: слишком короткий пакет для определения ro_type")
+			c.SafeLog("Data Export Protocol: too short packet to determine ro_type")
 			return
 		}
 		roType := binary.BigEndian.Uint16(data[4:6])
@@ -233,7 +233,7 @@ func (c *ComputerClient) handleDataExportPacket(data []byte) {
 			c.SafeLog("Data Export Protocol: RORS_APDU")
 			result := &packages.SinglePollDataResult{}
 			if err := result.UnmarshalBinary(bytes.NewReader(data)); err != nil {
-				c.SafeLog("Ошибка анмаршалинга SinglePollDataResult: %v", err)
+				c.SafeLog("failed to unmarshal SinglePollDataResult: %v", err)
 				return
 			}
 			result.ShowInfo(&c.printMu, 0)
@@ -241,7 +241,7 @@ func (c *ComputerClient) handleDataExportPacket(data []byte) {
 			c.SafeLog("Data Export Protocol: ROLRS_APDU")
 			linkedResult := &packages.SinglePollDataResultLinked{}
 			if err := linkedResult.UnmarshalBinary(bytes.NewReader(data)); err != nil {
-				c.SafeLog("Ошибка анмаршалинга SinglePollDataResultLinked: %v", err)
+				c.SafeLog("failed to unmarshal SinglePollDataResultLinked: %v", err)
 				return
 			}
 			linkedResult.ShowInfo(&c.printMu, 0)
@@ -249,10 +249,10 @@ func (c *ComputerClient) handleDataExportPacket(data []byte) {
 			c.SafeLog("Data Export Protocol: ROER_APDU")
 			// обработка ROER_APDU
 		default:
-			c.SafeLog("Data Export Protocol: Неизвестный ro_type 0x%04X", roType)
+			c.SafeLog("Data Export Protocol: unknown ro_type 0x%04X", roType)
 		}
 	default:
-		c.SafeLog("runPacketListener: Получен неизвестный пакет (0x%02X). Игнорируем.", firstByte)
-		utils.PrintHexDump(&c.printMu, "Неизвестный пакет", data)
+		c.SafeLog("runPacketListener: Received unknown packet (0x%02X). Ignoring.", firstByte)
+		utils.PrintHexDump(&c.printMu, "Unknown packet", data)
 	}
 }
