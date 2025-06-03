@@ -42,11 +42,9 @@ type ComputerClient struct {
 
 	isAssociationDone bool // Флаг для отслеживания состояния ассоциации
 
-	// Для обеспечения однократного закрытия клиента
 	closeOnce sync.Once
 }
 
-// NewComputerClient создает новый экземпляр ComputerClient.
 func NewComputerClient(addr, port string) *ComputerClient {
 	ctx, cancel := context.WithCancel(context.Background())
 	client := &ComputerClient{
@@ -233,7 +231,12 @@ func (c *ComputerClient) handleDataExportPacket(data []byte) {
 			// обработка ROIV_APDU
 		case RORS_APDU: // RORS_APDU
 			c.SafeLog("Data Export Protocol: RORS_APDU")
-			// обработка RORS_APDU
+			result := &packages.SinglePollDataResult{}
+			if err := result.UnmarshalBinary(bytes.NewReader(data)); err != nil {
+				c.SafeLog("Ошибка анмаршалинга SinglePollDataResult: %v", err)
+				return
+			}
+			result.ShowInfo(&c.printMu, 0)
 		case ROLRS_APDU: // ROLRS_APDU
 			c.SafeLog("Data Export Protocol: ROLRS_APDU")
 			linkedResult := &packages.SinglePollDataResultLinked{}

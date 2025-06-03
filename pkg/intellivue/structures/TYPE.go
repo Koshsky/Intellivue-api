@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"strings"
-	"sync"
 )
 
 type NomPartition uint16
@@ -69,11 +68,9 @@ func (t *TYPE) UnmarshalBinary(r io.Reader) error {
 	return nil
 }
 
-func (t *TYPE) ShowInfo(mu *sync.Mutex, indentationLevel int) {
+func (t *TYPE) ShowInfo(indentationLevel int) {
 	indent := strings.Repeat("  ", indentationLevel)
-	mu.Lock()
 	log.Printf("%s<TYPE>", indent)
 	log.Printf("%s  Partition: 0x%X", indent, t.Partition)
 	log.Printf("%s  Code: %d", indent, t.Code)
-	mu.Unlock()
 }

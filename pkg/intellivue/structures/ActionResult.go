@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"strings"
-	"sync"
 )
 
 // Command Types
@@ -68,14 +67,10 @@ func (a *ActionResult) UnmarshalBinary(reader io.Reader) error {
 	return nil
 }
 
-func (a *ActionResult) ShowInfo(mu *sync.Mutex, indentationLevel int) {
+func (a *ActionResult) ShowInfo(indentationLevel int) {
 	indent := strings.Repeat("  ", indentationLevel)
-	mu.Lock()
 	log.Printf("%s<ActionResult>", indent)
-	mu.Unlock()
-	a.ManagedObject.ShowInfo(mu, indentationLevel+1)
-	mu.Lock()
+	a.ManagedObject.ShowInfo(indentationLevel + 1)
 	log.Printf("%s  ActionType: 0x%X", indent, a.ActionType)
 	log.Printf("%s  Length: %d", indent, a.Length)
-	mu.Unlock()
 }

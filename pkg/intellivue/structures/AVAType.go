@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"strings"
-	"sync"
 
 	"github.com/Koshsky/Intellivue-api/pkg/intellivue/utils"
 	// "sync" // Удаляем импорт sync, если он больше не нужен
@@ -84,17 +83,15 @@ func (a *AVAType) UnmarshalBinary(r io.Reader) error {
 	return nil
 }
 
-func (a *AVAType) ShowInfo(mu *sync.Mutex, indentationLevel int) {
+func (a *AVAType) ShowInfo(indentationLevel int) {
 	indent := strings.Repeat("  ", indentationLevel)
 
-	mu.Lock()
 	log.Printf("%s<AttributeList>", indent)
-	log.Printf("%s  AttributeID: %d", indent, a.AttributeID)
+	log.Printf("%s  AttributeID: %#04x", indent, a.AttributeID)
 	log.Printf("%s  Length: %d", indent, a.Length)
 	if valueBytes, ok := a.Value.([]byte); ok {
 		log.Printf("%s  value: %s", indent, utils.PrintHex(valueBytes))
 	} else {
 		log.Printf("%s  value: <not []byte>", indent)
 	}
-	mu.Unlock()
 }

@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"strings"
-	"sync"
 )
 
 type PollInfoList struct {
@@ -79,17 +78,15 @@ func (pil *PollInfoList) UnmarshalBinary(r io.Reader) error {
 	return nil
 }
 
-func (p *PollInfoList) ShowInfo(mu *sync.Mutex, indentationLevel int) {
+func (p *PollInfoList) ShowInfo(indentationLevel int) {
 	indent := strings.Repeat("  ", indentationLevel)
 
-	mu.Lock()
 	log.Printf("%s<PollInfoList>", indent)
 	log.Printf("%s  Value:", indent)
 	log.Printf("%s  Count: %d", indent, p.Count())
 	log.Printf("%s  Length: %d", indent, p.Length())
-	mu.Unlock()
 
 	for _, poll := range p.Value {
-		poll.ShowInfo(mu, indentationLevel+1)
+		poll.ShowInfo(indentationLevel + 1)
 	}
 }

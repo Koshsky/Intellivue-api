@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"strings"
-	"sync"
 )
 
 type ROLRSapdu struct {
@@ -65,13 +64,11 @@ func (r *ROLRSapdu) UnmarshalBinary(reader io.Reader) error {
 	return nil
 }
 
-func (r *ROLRSapdu) ShowInfo(mu *sync.Mutex, indentationLevel int) {
+func (r *ROLRSapdu) ShowInfo(indentationLevel int) {
 	indent := strings.Repeat("  ", indentationLevel)
-	r.LinkedID.ShowInfo(mu, indentationLevel+1)
-	mu.Lock()
+	r.LinkedID.ShowInfo(indentationLevel + 1)
 	log.Printf("%s<ROLRSapdu>", indent)
 	log.Printf("%s  InvokeID: %d", indent, r.InvokeID)
 	log.Printf("%s  CommandType: %d", indent, r.CommandType)
 	log.Printf("%s  Length: %d", indent, r.Length)
-	mu.Unlock()
 }

@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"strings"
-	"sync"
 )
 
 type SingleContextPoll struct {
@@ -88,15 +87,13 @@ func (s *SingleContextPoll) UnmarshalBinary(r io.Reader) error {
 	return nil
 }
 
-func (s *SingleContextPoll) ShowInfo(mu *sync.Mutex, indentationLevel int) {
+func (s *SingleContextPoll) ShowInfo(indentationLevel int) {
 	indent := strings.Repeat("  ", indentationLevel)
 
-	mu.Lock()
 	log.Printf("%s<SingleContextPoll>", indent)
-	log.Printf("%s  ContextID: %s", indent, s.ContextID)
-	mu.Unlock()
+	log.Printf("%s  ContextID: %d", indent, s.ContextID)
 
 	for _, op := range s.PollInfo {
-		op.ShowInfo(mu, indentationLevel+1)
+		op.ShowInfo(indentationLevel + 1)
 	}
 }

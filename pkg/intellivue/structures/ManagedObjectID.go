@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"strings"
-	"sync"
 )
 
 type ManagedObjectId struct {
@@ -50,10 +49,8 @@ func (m *ManagedObjectId) UnmarshalBinary(reader io.Reader) error {
 }
 
 // ShowInfo выводит информацию о структуре ManagedObjectId через предоставленный канал логов.
-func (m *ManagedObjectId) ShowInfo(mu *sync.Mutex, indentationLevel int) {
+func (m *ManagedObjectId) ShowInfo(indentationLevel int) {
 	indent := strings.Repeat("  ", indentationLevel)
-	mu.Lock()
 	log.Printf("%s<ManagedObjectId>", indent)
 	log.Printf("%s  MObjClass: 0x%X", indent, m.MObjClass)
-	mu.Unlock()
 }

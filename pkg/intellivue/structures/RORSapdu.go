@@ -5,6 +5,8 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"log"
+	"strings"
 )
 
 // Remote Operation Result
@@ -48,4 +50,12 @@ func (r *RORSapdu) UnmarshalBinary(reader io.Reader) error {
 	}
 
 	return nil
+}
+
+func (r *RORSapdu) ShowInfo(indentationLevel int) {
+	indent := strings.Repeat("  ", indentationLevel)
+	log.Printf("%s<RORSapdu>", indent)
+	log.Printf("%s  InvokeID: %d", indent, r.InvokeID)
+	log.Printf("%s  CommandType: %d", indent, r.CommandType)
+	log.Printf("%s  Length: %d", indent, r.Length)
 }

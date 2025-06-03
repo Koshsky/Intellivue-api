@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"strings"
-	"sync"
 )
 
 // Remote Operation Header
@@ -45,11 +44,9 @@ func (r *ROapdus) UnmarshalBinary(reader io.Reader) error {
 	return nil
 }
 
-func (r *ROapdus) ShowInfo(mu *sync.Mutex, indentationLevel int) {
+func (r *ROapdus) ShowInfo(indentationLevel int) {
 	indent := strings.Repeat("  ", indentationLevel)
-	mu.Lock()
 	log.Printf("%s<ROapdus>", indent)
 	log.Printf("%s  ROType: 0x%X", indent, r.ROType)
 	log.Printf("%s  Length: %d", indent, r.Length)
-	mu.Unlock()
 }

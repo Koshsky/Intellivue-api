@@ -9,9 +9,6 @@ import (
 // PrintHexDump выводит шестнадцатеричный дамп байтов с форматированием.
 // Принимает указатель на sync.Mutex для синхронизации вывода в терминал.
 func PrintHexDump(mu *sync.Mutex, title string, data []byte) {
-	mu.Lock()
-	defer mu.Unlock()
-
 	fmt.Printf("\n=== %s ===\n", title)
 	fmt.Printf("Length: %d bytes\n", len(data))
 	fmt.Println("Hex dump:")

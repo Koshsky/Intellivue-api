@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"strings"
-	"sync"
 )
 
 const (
@@ -51,11 +50,9 @@ func (r *RorlsId) UnmarshalBinary(reader io.Reader) error {
 	return nil
 }
 
-func (r *RorlsId) ShowInfo(mu *sync.Mutex, indentationLevel int) {
+func (r *RorlsId) ShowInfo(indentationLevel int) {
 	indent := strings.Repeat("  ", indentationLevel)
-	mu.Lock()
 	log.Printf("%s<RorlsId>", indent)
 	log.Printf("%s  State: 0x%X", indent, r.State)
 	log.Printf("%s  Count: %d", indent, r.Count)
-	mu.Unlock()
 }

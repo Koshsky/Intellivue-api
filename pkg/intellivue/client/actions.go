@@ -8,9 +8,28 @@ import (
 )
 
 func (c *ComputerClient) SendPollNumericAction(invokeID uint16) error {
-	c.SafeLog(fmt.Sprintf("Отправка SinglePollDataRequest запроса с InvokeID: %d", invokeID))
+	c.SafeLog("Отправка SinglePollDataRequest запроса с InvokeID: %d", invokeID)
 
 	msg := packages.NewSinglePollDataRequest(invokeID, NOM_MOC_VMO_METRIC_NU)
+
+	dataToSend, err := msg.MarshalBinary()
+	if err != nil {
+		return fmt.Errorf("ошибка маршалинга SinglePollDataRequest: %w", err)
+	}
+
+	if err := c.sendData(dataToSend); err != nil {
+		return fmt.Errorf("ошибка отправки SinglePollDataRequest: %w", err)
+	}
+
+	c.SafeLog("SinglePollDataRequest пакет отправлен.")
+
+	return nil
+}
+
+func (c *ComputerClient) SendPollAlarmAction(invokeID uint16) error {
+	c.SafeLog("Отправка SendPollAlarmAction запроса с InvokeID: %d", invokeID)
+
+	msg := packages.NewSinglePollDataRequest(invokeID, NOM_MOC_VMO_AL_MON)
 
 	dataToSend, err := msg.MarshalBinary()
 	if err != nil {

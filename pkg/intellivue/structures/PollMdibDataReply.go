@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"strings"
-	"sync"
 )
 
 type PollMdibDataReply struct {
@@ -82,22 +81,15 @@ func (p *PollMdibDataReply) UnmarshalBinary(r io.Reader) error {
 	return nil
 }
 
-func (p *PollMdibDataReply) ShowInfo(mu *sync.Mutex, indentationLevel int) {
+func (p *PollMdibDataReply) ShowInfo(indentationLevel int) {
 	indent := strings.Repeat("  ", indentationLevel)
 
-	mu.Lock()
 	log.Printf("%s<PollMdibDataReply>", indent)
 	log.Printf("%s  PollNumber: 0x%X", indent, p.PollNumber)
 	log.Printf("%s  RelTimeStamp: 0x%X", indent, p.RelTimeStamp)
-	log.Printf("%s  AbsTimeStamp: %d", indent, p.AbsTimeStamp)
-	mu.Unlock()
-
-	p.PolledObjType.ShowInfo(mu, indentationLevel+1)
-
-	mu.Lock()
+	p.AbsTimeStamp.ShowInfo(indentationLevel + 1)
+	p.PolledObjType.ShowInfo(indentationLevel + 1)
 	log.Printf("%s  PolledAttrGrp: %d", indent, p.PolledAttrGrp)
-	mu.Unlock()
-
-	p.PollInfoList.ShowInfo(mu, indentationLevel+1)
+	p.PollInfoList.ShowInfo(indentationLevel + 1)
 
 }

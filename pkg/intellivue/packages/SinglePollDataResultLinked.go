@@ -90,11 +90,10 @@ func (m *SinglePollDataResultLinked) ShowInfo(mu *sync.Mutex, indentationLevel i
 
 	mu.Lock()
 	log.Printf("%s<SinglePollDataResultLinked>", indent)
+	m.SPpdu.ShowInfo(indentationLevel + 1)
+	m.ROapdus.ShowInfo(indentationLevel + 1)
+	m.ROLRSapdu.ShowInfo(indentationLevel + 1)
+	m.ActionResult.ShowInfo(indentationLevel + 1)
+	m.PollMdibDataReply.ShowInfo(indentationLevel + 1)
 	mu.Unlock()
-
-	m.SPpdu.ShowInfo(mu, indentationLevel+1)
-	m.ROapdus.ShowInfo(mu, indentationLevel+1)
-	m.ROLRSapdu.ShowInfo(mu, indentationLevel+1)
-	m.ActionResult.ShowInfo(mu, indentationLevel+1)
-	m.PollMdibDataReply.ShowInfo(mu, indentationLevel+1)
 }

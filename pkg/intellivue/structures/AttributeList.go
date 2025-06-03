@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"strings"
-	"sync"
 )
 
 type AttributeList struct {
@@ -79,16 +78,14 @@ func (a *AttributeList) UnmarshalBinary(r io.Reader) error {
 	return nil
 }
 
-func (a *AttributeList) ShowInfo(mu *sync.Mutex, indentationLevel int) {
+func (a *AttributeList) ShowInfo(indentationLevel int) {
 	indent := strings.Repeat("  ", indentationLevel)
 
-	mu.Lock()
 	log.Printf("%s<AttributeList>", indent)
 	log.Printf("%s  Count: %d", indent, a.Count())
 	log.Printf("%s  Length: %d", indent, a.Length())
-	mu.Unlock()
 
 	for _, ava := range a.Value {
-		ava.ShowInfo(mu, indentationLevel+1)
+		ava.ShowInfo(indentationLevel + 1)
 	}
 }

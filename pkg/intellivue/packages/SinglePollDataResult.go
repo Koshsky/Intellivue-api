@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"log"
+	"strings"
+	"sync"
 
 	. "github.com/Koshsky/Intellivue-api/pkg/intellivue/structures"
 )
@@ -80,4 +83,17 @@ func (m *SinglePollDataResult) UnmarshalBinary(r io.Reader) error {
 	}
 
 	return nil
+}
+
+func (m *SinglePollDataResult) ShowInfo(mu *sync.Mutex, indentationLevel int) {
+	indent := strings.Repeat("  ", indentationLevel)
+
+	mu.Lock()
+	log.Printf("%s<SinglePollDataResult>", indent)
+	m.SPpdu.ShowInfo(indentationLevel + 1)
+	m.ROapdus.ShowInfo(indentationLevel + 1)
+	m.RORSapdu.ShowInfo(indentationLevel + 1)
+	m.ActionResult.ShowInfo(indentationLevel + 1)
+	m.PollMdibDataReply.ShowInfo(indentationLevel + 1)
+	mu.Unlock()
 }

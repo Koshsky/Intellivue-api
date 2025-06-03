@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"strings"
-	"sync"
 )
 
 // Session/Presentation Header
@@ -46,11 +45,9 @@ func (s *SPpdu) UnmarshalBinary(reader io.Reader) error {
 	return nil
 }
 
-func (s *SPpdu) ShowInfo(mu *sync.Mutex, indentationLevel int) {
+func (s *SPpdu) ShowInfo(indentationLevel int) {
 	indent := strings.Repeat("  ", indentationLevel)
-	mu.Lock()
 	log.Printf("%s<SPpdu>", indent)
 	log.Printf("%s  SessionID: 0x%X", indent, s.SessionID)
 	log.Printf("%s  PContextID: %d", indent, s.PContextID)
-	mu.Unlock()
 }
