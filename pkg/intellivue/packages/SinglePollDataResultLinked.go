@@ -4,25 +4,28 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"log"
+	"strings"
+	"sync"
 
 	. "github.com/Koshsky/Intellivue-api/pkg/intellivue/structures"
 )
 
 // The Single Poll Data Result message contains a PollInfoList which is of variable length. The length
 // fields in the message depend on the length of the PollInfoList.
-type SinglePollDataResult struct {
+type SinglePollDataResultLinked struct {
 	SPpdu
 	ROapdus
-	RORSapdu
+	ROLRSapdu
 	ActionResult
 	PollMdibDataReply
 }
 
-func (m *SinglePollDataResult) Size() uint16 {
-	return m.SPpdu.Size() + m.ROapdus.Size() + m.RORSapdu.Size() + m.ActionResult.Size() + m.PollMdibDataReply.Size()
+func (m *SinglePollDataResultLinked) Size() uint16 {
+	return m.SPpdu.Size() + m.ROapdus.Size() + m.ROLRSapdu.Size() + m.ActionResult.Size() // + m.PollMdibDataReply.Size()
 }
 
-func (m *SinglePollDataResult) MarshalBinary() ([]byte, error) {
+func (m *SinglePollDataResultLinked) MarshalBinary() ([]byte, error) {
 	buf := new(bytes.Buffer)
 
 	SPDuData, err := m.SPpdu.MarshalBinary()
@@ -37,7 +40,7 @@ func (m *SinglePollDataResult) MarshalBinary() ([]byte, error) {
 	}
 	buf.Write(ROapdusData)
 
-	RORSapduData, err := m.RORSapdu.MarshalBinary()
+	RORSapduData, err := m.ROLRSapdu.MarshalBinary()
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +61,7 @@ func (m *SinglePollDataResult) MarshalBinary() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (m *SinglePollDataResult) UnmarshalBinary(r io.Reader) error {
+func (m *SinglePollDataResultLinked) UnmarshalBinary(r io.Reader) error {
 	if m == nil {
 		return fmt.Errorf("nil SinglePollDataResult receiver")
 	}
@@ -69,7 +72,7 @@ func (m *SinglePollDataResult) UnmarshalBinary(r io.Reader) error {
 	if err := m.ROapdus.UnmarshalBinary(r); err != nil {
 		return fmt.Errorf("failed to unmarshal ROapdus: %w", err)
 	}
-	if err := m.RORSapdu.UnmarshalBinary(r); err != nil {
+	if err := m.ROLRSapdu.UnmarshalBinary(r); err != nil {
 		return fmt.Errorf("failed to unmarshal RORSapdu: %w", err)
 	}
 	if err := m.ActionResult.UnmarshalBinary(r); err != nil {
@@ -80,4 +83,18 @@ func (m *SinglePollDataResult) UnmarshalBinary(r io.Reader) error {
 	}
 
 	return nil
+}
+
+func (m *SinglePollDataResultLinked) ShowInfo(mu *sync.Mutex, indentationLevel int) {
+	indent := strings.Repeat("  ", indentationLevel)
+
+	mu.Lock()
+	log.Printf("%s<SinglePollDataResultLinked>", indent)
+	mu.Unlock()
+
+	m.SPpdu.ShowInfo(mu, indentationLevel+1)
+	m.ROapdus.ShowInfo(mu, indentationLevel+1)
+	m.ROLRSapdu.ShowInfo(mu, indentationLevel+1)
+	m.ActionResult.ShowInfo(mu, indentationLevel+1)
+	m.PollMdibDataReply.ShowInfo(mu, indentationLevel+1)
 }

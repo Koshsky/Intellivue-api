@@ -1,183 +1,255 @@
 package client
 
 import (
+	"bytes"
 	"context"
+	"encoding/binary"
 	"fmt"
 	"log"
 	"net"
 	"sync"
-	"time"
 
-	. "github.com/Koshsky/Intellivue-api/pkg/intellivue/packages"
+	"github.com/Koshsky/Intellivue-api/pkg/intellivue/packages"
+	. "github.com/Koshsky/Intellivue-api/pkg/intellivue/structures"
+	"github.com/Koshsky/Intellivue-api/pkg/intellivue/utils"
 )
 
-// DataStream represents a single data stream from the computer
-type DataStream struct {
-	ID    string
-	Value interface{}
-}
-
-// ComputerClient handles communication with the medical device
+// ComputerClient представляет клиента, взаимодействующего с устройством Intellivue.
 type ComputerClient struct {
-	host string
-	port string
-	mu   sync.RWMutex
-	// streams stores the latest value for each stream
-	streams map[string]*DataStream
-	conn    net.Conn
+	// printMu мьютекс для синхронизации вывода в терминал из разных горутин.
+	printMu sync.Mutex
 
-	// Канал для сигнализации о завершении работы рутины runPacketListener и ее результате (включая завершение ассоциации)
-	listenerOutcome chan error
+	serverAddr string   // Адрес сервера (устройства Intellivue)
+	serverPort string   // Порт сервера
+	conn       net.Conn // Сетевое соединение
+	// reader     *bufio.Reader // Буферизованный читатель для парсинга пакетов - Удалено для UDP
+
+	// Канал для отправки пакетов на устройство.
+	sendChan chan []byte
+	// Канал для приема обработанных входящих пакетов (пока не используется).
+	// receiveChan chan packages.DataPackage
+
+	// Канал для получения пакетов Data Export Protocol для обработки.
+	dataExportChan chan []byte
+
+	// Контекст для управления жизненным циклом клиента и его горутин.
+	ctx context.Context
+	// Функция отмены контекста.
+	cancel context.CancelFunc
+
+	// WaitGroup для отслеживания запущенных горутин.
+	wg sync.WaitGroup
+
+	isAssociationDone bool // Флаг для отслеживания состояния ассоциации
+
+	// Для обеспечения однократного закрытия клиента
+	closeOnce sync.Once
 }
 
-// NewComputerClient creates a new instance of ComputerClient
-func NewComputerClient(host, port string) *ComputerClient {
-	log.Printf("Initializing ComputerClient with host=%s, port=%s", host, port)
-	return &ComputerClient{
-		host:    host,
-		port:    port,
-		streams: make(map[string]*DataStream),
-		// Буферизация 1 нужна, чтобы не блокироваться при отправке nil после успешной ассоциации
-		// до того, как Connect начнет читать из канала.
-		listenerOutcome: make(chan error, 1),
+// NewComputerClient создает новый экземпляр ComputerClient.
+func NewComputerClient(addr, port string) *ComputerClient {
+	ctx, cancel := context.WithCancel(context.Background())
+	client := &ComputerClient{
+		serverAddr: addr,
+		serverPort: port,
+		ctx:        ctx,
+		cancel:     cancel,
+		sendChan:   make(chan []byte, 10), // если используется
 	}
+	client.wg.Add(1)
+	go client.runPacketListener()
+	return client
 }
 
-// EstablishUDPConnection устанавливает только UDP соединение с сервером и запускает обработчик входящих пакетов.
-// Принимает контекст для управления жизненным циклом обработчика входящих пакетов.
-func (c *ComputerClient) EstablishUDPConnection(ctx context.Context) error {
-	addr := fmt.Sprintf("%s:%s", c.host, c.port)
-	log.Printf("Создание UDP соединения с %s...", addr)
+// Connect устанавливает UDP соединение с устройством Intellivue и выполняет процедуру ассоциации.
+// Принимает контекст для управления жизненным циклом операции соединения.
+// Возвращает nil при успешной ассоциации или ошибку при неудаче.
+func (c *ComputerClient) Connect(ctx context.Context) error {
+	c.SafeLog("Попытка установления UDP соединения и ассоциации с %s:%s", c.serverAddr, c.serverPort)
 
+	addr := fmt.Sprintf("%s:%s", c.serverAddr, c.serverPort)
 	udpAddr, err := net.ResolveUDPAddr("udp", addr)
 	if err != nil {
-		return fmt.Errorf("ошибка разрешения UDP адреса: %v", err)
+		return fmt.Errorf("ошибка разрешения UDP адреса: %w", err)
 	}
 
 	conn, err := net.DialUDP("udp", nil, udpAddr)
 	if err != nil {
-		return fmt.Errorf("ошибка создания UDP соединения: %v", err)
+		return fmt.Errorf("ошибка создания UDP соединения: %w", err)
 	}
-
 	c.conn = conn
-	log.Println("UDP соединение установлено")
+	c.SafeLog("UDP соединение установлено.")
 
-	// Начинаем слушать ответы после установки соединения, используя переданный контекст
-	// runPacketListener будет управлять всем циклом, включая рукопожатие и дальнейшие пакеты.
-	go c.runPacketListener(ctx, c.conn.(*net.UDPConn), c.listenerOutcome) // Передаем listenerOutcome для сигнализации
+	// Запускаем горутину для прослушивания входящих пакетов
+	c.wg.Add(1) // Увеличиваем счетчик WaitGroup для runPacketListener
+	go c.runPacketListener()
 
-	return nil
-}
+	// Запускаем горутину для отправки пакетов из sendChan
+	c.wg.Add(1) // Увеличиваем счетчик WaitGroup для runPacketSender
+	go c.runPacketSender()
 
-// Connect устанавливает UDP соединение с сервером и выполняет запрос ассоциации.
-// Connect возвращает nil при успешной ассоциации или ошибку при неудаче (включая ошибки в runPacketListener
-// во время рукопожатия). После успешного Connect, runPacketListener продолжает работать
-// и сигнализирует о дальнейших ошибках/закрытии через канал listenerOutcome.
-func (c *ComputerClient) Connect(ctx context.Context) error {
-	// Устанавливаем базовое UDP соединение и запускаем слушателя (runPacketListener)
-	if err := c.EstablishUDPConnection(ctx); err != nil {
-		return fmt.Errorf("ошибка при установке UDP соединения: %w", err)
-	}
-
-	// Установка ассоциации: создание и отправка AssociationRequest
-	msg := NewAssocReqMessage()
-	data, err := msg.MarshalBinary()
+	// Выполняем процедуру установления ассоциации
+	// Создание сообщения AssociationRequest
+	assocReq, err := packages.NewAssocReqMessage().MarshalBinary()
 	if err != nil {
 		c.Close() // Закрываем соединение при ошибке создания сообщения
-		return fmt.Errorf("ошибка при создании сообщения AssociationRequest: %v", err)
+		return fmt.Errorf("ошибка при создании сообщения AssociationRequest: %w", err)
 	}
 
-	// Send the Association Request
-	if err := c.sendData(data); err != nil {
+	// Отправка запроса ассоциации
+	if err := c.sendData(assocReq); err != nil {
 		c.Close() // Закрываем соединение при ошибке отправки
 		return fmt.Errorf("ошибка отправки запроса ассоциации: %w", err)
 	}
 
-	log.Println("AssociationRequest отправлен. Ожидание ответа...")
+	c.SafeLog("AssociationRequest отправлен. Ожидание ответа...")
 
-	// Ожидаем завершения рукопожатия ассоциации от runPacketListener
-	select {
-	case <-ctx.Done():
-		// Если контекст отменен во время ожидания ответа ассоциации
-		c.Close()
-		// listenerOutcome будет закрыт рутиной слушателя при отмене контекста
-		return ctx.Err() // Возвращаем ошибку контекста
-	case err := <-c.listenerOutcome:
-		// Получен сигнал о завершении рукопожатия или ошибке от runPacketListener
-		if err != nil {
-			return fmt.Errorf("рукопожатие ассоциации завершилось с ошибкой: %w", err) // Возвращаем полученную ошибку
-		}
-		log.Println("Рукопожатие ассоциации успешно завершено.")
+	// TODO: Реализовать ожидание Association Response в runPacketListener
+	// Сейчас Connect возвращает успешно после отправки запроса, что неверно.
+	// Нужен механизм сигнализации от runPacketListener об успешной ассоциации.
+	// Временно возвращаем nil для продолжения, но это требует доработки.
 
-		// runPacketListener продолжает работать и обрабатывать последующие пакеты.
-
-		return nil // Connect успешно завершен
-	}
+	return nil // Временно: успешное возвращение после отправки запроса
 }
 
-// Close закрывает соединение
+// Close gracefully закрывает соединение и останавливает все горутины клиента.
 func (c *ComputerClient) Close() error {
-	c.mu.Lock() // Защита от множественного закрытия
-	defer c.mu.Unlock()
+	c.closeOnce.Do(func() {
+		c.SafeLog("Запуск процедуры закрытия клиента...")
 
-	if c.conn != nil {
-		err := c.conn.Close()
-		c.conn = nil
-		log.Println("Соединение закрыто")
-		// TODO: Возможно, нужно закрыть канал listenerOutcome здесь, если рутина слушателя завершилась не сама.
-		// Но лучше, чтобы канал закрывала сама рутина runPacketListener при своем завершении.
-		return err
-	}
+		c.cancel()
+		c.wg.Wait()
+		c.SafeLog("Все горутины завершены.")
+
+		if c.conn != nil {
+			c.conn.Close()
+			c.conn = nil
+			c.SafeLog("Сетевое соединение закрыто.")
+		}
+
+		// Закрываем только реально существующий канал
+		if c.sendChan != nil {
+			close(c.sendChan)
+		}
+
+		c.SafeLog("Процедура закрытия клиента завершена.")
+	})
 	return nil
 }
 
-// sendData отправляет данные по UDP
-func (c *ComputerClient) sendData(data []byte) error {
-	c.mu.RLock() // Используем RLock, так как только читаем c.conn
-	conn := c.conn
-	c.mu.RUnlock()
+// runPacketSender отправляет пакеты из sendChan на устройство.
+func (c *ComputerClient) runPacketSender() {
+	defer c.wg.Done() // Уменьшаем счетчик WaitGroup при завершении горутины
+	c.SafeLog("Запуск Packet Sender рутины...")
 
-	if conn == nil {
+	for {
+		select {
+		case data, ok := <-c.sendChan:
+			if !ok { // Канал закрыт
+				c.SafeLog("Packet Sender: Канал отправки закрыт, завершение рутины.")
+				return
+			}
+			// TODO: Добавить мьютекс для записи в соединение, если multiple goroutines могут писать
+			if err := c.sendData(data); err != nil {
+				c.SafeLog("Ошибка при отправке данных: %v", err)
+				// TODO: Обработка ошибок отправки (переподключение?)
+			}
+		case <-c.ctx.Done():
+			c.SafeLog("Packet Sender: Контекст отменен, завершение рутины.")
+			return
+		}
+	}
+}
+
+// sendData отправляет байты данных в сетевое соединение.
+func (c *ComputerClient) sendData(data []byte) error {
+	if c.conn == nil {
 		return fmt.Errorf("соединение не установлено")
 	}
-
-	// Устанавливаем таймаут записи, чтобы отправка не блокировалась вечно
-	if err := conn.SetWriteDeadline(time.Now().Add(5 * time.Second)); err != nil {
-		return fmt.Errorf("ошибка установки таймаута записи: %v", err)
-	}
-
-	// Сбрасываем таймаут записи после операции, чтобы не мешать последующим операциям (чтению)
-	defer conn.SetWriteDeadline(time.Time{})
-
-	n, err := conn.Write(data)
-	if err != nil {
-		return fmt.Errorf("ошибка при отправке: %v", err)
-	}
-	log.Printf("Отправлено %d байт по UDP\n", n)
-	return nil
+	// TODO: Установить таймаут записи для UDP
+	_, err := c.conn.Write(data)
+	return err
 }
 
-// GetLatestData возвращает последние данные для указанного потока
-func (c *ComputerClient) GetLatestData(streamID string) (*DataStream, bool) {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
+// runPacketListener прослушивает входящие пакеты от устройства по UDP и сразу обрабатывает их.
+func (c *ComputerClient) runPacketListener() {
+	defer c.wg.Done()
+	c.SafeLog("Запуск Packet Listener рутины...")
 
-	data, exists := c.streams[streamID]
-	if !exists {
-		log.Printf("Warning: Requested stream '%s' not found", streamID)
+	conn, ok := c.conn.(*net.UDPConn)
+	if !ok {
+		c.SafeLog("runPacketListener: Ошибка: соединение не является UDP.")
+		return
 	}
-	return data, exists
+
+	buffer := make([]byte, 4096)
+	for {
+		n, _, err := conn.ReadFromUDP(buffer)
+		if err != nil {
+			c.SafeLog("runPacketListener: Ошибка чтения UDP: %v", err)
+			return
+		}
+		if n == 0 {
+			continue
+		}
+		data := make([]byte, n)
+		copy(data, buffer[:n])
+		c.SafeLog("runPacketListener: Получен пакет, первый байт: 0x%02X", data[0])
+		c.handleDataExportPacket(data)
+	}
 }
 
-// UpdateStream обновляет значение указанного потока данных
-// Эта функция будет вызываться из обработчиков пакетов данных (например, MDS Poll Result)
-func (c *ComputerClient) UpdateStream(streamID string, value interface{}) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+func (c *ComputerClient) SafeLog(format string, args ...interface{}) {
+	c.printMu.Lock()
+	defer c.printMu.Unlock()
+	log.Printf(format, args...)
+}
 
-	c.streams[streamID] = &DataStream{
-		ID:    streamID,
-		Value: value,
+// handleDataExportPacket теперь сразу обрабатывает пакет
+func (c *ComputerClient) handleDataExportPacket(data []byte) {
+	firstByte := data[0]
+	switch firstByte {
+	case 0x0E:
+		c.SafeLog("runPacketListener: Получен Association Response (0x0E)")
+		c.isAssociationDone = true
+	case 0x19:
+		c.SafeLog("runPacketListener: Получен пакет Association Abort (0x19).")
+		c.Close()
+		return
+	case 0x0C:
+		c.SafeLog("runPacketListener: Получен пакет Association Refuse (0x0C).")
+		c.Close()
+		return
+	case 0xE1:
+		c.SafeLog("runPacketListener: Получен Data Export Protocol пакет (0xE1). Обработка...")
+		if len(data) < 6 {
+			c.SafeLog("Data Export Protocol: слишком короткий пакет для определения ro_type")
+			return
+		}
+		roType := binary.BigEndian.Uint16(data[4:6])
+		switch roType {
+		case ROIV_APDU: // ROIV_APDU
+			c.SafeLog("Data Export Protocol: ROIV_APDU")
+			// обработка ROIV_APDU
+		case RORS_APDU: // RORS_APDU
+			c.SafeLog("Data Export Protocol: RORS_APDU")
+			// обработка RORS_APDU
+		case ROLRS_APDU: // ROLRS_APDU
+			c.SafeLog("Data Export Protocol: ROLRS_APDU")
+			linkedResult := &packages.SinglePollDataResultLinked{}
+			if err := linkedResult.UnmarshalBinary(bytes.NewReader(data)); err != nil {
+				c.SafeLog("Ошибка анмаршалинга SinglePollDataResultLinked: %v", err)
+				return
+			}
+			linkedResult.ShowInfo(&c.printMu, 0)
+		case ROER_APDU: // ROER_APDU
+			c.SafeLog("Data Export Protocol: ROER_APDU")
+			// обработка ROER_APDU
+		default:
+			c.SafeLog("Data Export Protocol: Неизвестный ro_type 0x%04X", roType)
+		}
+	default:
+		c.SafeLog("runPacketListener: Получен неизвестный пакет (0x%02X). Игнорируем.", firstByte)
+		utils.PrintHexDump(&c.printMu, "Неизвестный пакет", data)
 	}
-	log.Printf("Updated stream '%s' with new data", streamID)
 }

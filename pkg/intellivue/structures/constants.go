@@ -20,16 +20,6 @@ const (
 	NOM_NOTI_MDS_CREAT OIDType = 0x0d06 // MDS Create Notification (Used)
 )
 
-// Command Types
-const (
-	CMD_EVENT_REPORT           CMDType = 0x0000 // Event Report
-	CMD_CONFIRMED_EVENT_REPORT CMDType = 0x0001 // Confirmed Event Report
-	CMD_GET                    CMDType = 0x0003 // Get
-	CMD_SET                    CMDType = 0x0004 // Set
-	CMD_CONFIRMED_SET          CMDType = 0x0005 // Confirmed Set
-	CMD_CONFIRMED_ACTION       CMDType = 0x0007 // Confirmed Action
-)
-
 // Association Control
 const (
 	MDDL_VERSION1 uint32 = 0x80000000 // Data Export Protocol Version (Used)

@@ -2,10 +2,16 @@ package utils
 
 import (
 	"fmt"
+	"strings"
+	"sync"
 )
 
-// PrintHexDump выводит бинарные данные в HEX-формате.
-func PrintHexDump(title string, data []byte) {
+// PrintHexDump выводит шестнадцатеричный дамп байтов с форматированием.
+// Принимает указатель на sync.Mutex для синхронизации вывода в терминал.
+func PrintHexDump(mu *sync.Mutex, title string, data []byte) {
+	mu.Lock()
+	defer mu.Unlock()
+
 	fmt.Printf("\n=== %s ===\n", title)
 	fmt.Printf("Length: %d bytes\n", len(data))
 	fmt.Println("Hex dump:")
@@ -25,4 +31,17 @@ func PrintHexDump(title string, data []byte) {
 		}
 		fmt.Println()
 	}
+	fmt.Println()
+}
+
+func PrintHex(data []byte) string {
+	const bytesPerLine = 16
+	var builder strings.Builder
+
+	for i := 0; i < len(data); i += bytesPerLine {
+		chunk := data[i:min(i+bytesPerLine, len(data))]
+		builder.WriteString(fmt.Sprintf("% x\n", chunk)) // пробелы между байтами
+	}
+
+	return strings.TrimSuffix(builder.String(), "\n") // убираем последний \n
 }

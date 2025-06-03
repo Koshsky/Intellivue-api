@@ -2,55 +2,46 @@ package client
 
 import (
 	"context"
-	"log"
 	"time"
 )
 
 // CollectNumerics собирает и обрабатывает пакеты жизненно важных показателей.
-// Реализована отправка MDS Poll Action запроса для сбора числовых данных.
+// Реализована отправка SinglePollDataRequest запроса для сбора числовых данных.
 func (c *ComputerClient) CollectNumerics(ctx context.Context) {
-	log.Println("Запуск рутины CollectNumerics...")
-
-	// Используем invokeID, начиная с 1. В реальном приложении, возможно, стоит сделать его потокобезопасным
-	// или использовать другой механизм управления invokeID.
 	var invokeID uint16 = 1
 
-	// Интервал отправки запросов (например, каждые 5 секунд)
-	pollInterval := 5 * time.Second
+	pollInterval := 15 * time.Second // Изменил интервал на 2 секунды, как было запрошено в одном из предыдущих сообщений
 	ticker := time.NewTicker(pollInterval)
 	defer ticker.Stop()
 
-	// Отправляем первый запрос сразу при запуске
 	if err := c.SendPollNumericAction(invokeID); err != nil {
-		log.Printf("Ошибка при первой отправке MDS Poll Action: %v", err)
+		c.SafeLog("Failed to process SinglePollDataResultLinked: %v", err)
 	}
 	invokeID++
 
-	// Цикл для периодической отправки запросов
 	for {
 		select {
 		case <-ctx.Done():
-			log.Println("CollectNumerics: Контекст отменен, завершение рутины.")
+			c.SafeLog("CollectNumerics: Контекст отменен, завершение рутины.")
 			return
 		case <-ticker.C:
-			// Время отправки очередного запроса
-			log.Println("Отправка очередного MDS Poll Action запроса по таймеру.")
+			c.SafeLog("Отправка очередного SinglePollDataRequest запроса по таймеру.")
 			if err := c.SendPollNumericAction(invokeID); err != nil {
-				log.Printf("Ошибка при отправке MDS Poll Action с InvokeID %d: %v", invokeID, err)
+				c.SafeLog("Ошибка при отправке SinglePollDataRequest с InvokeID %d: %v", invokeID, err)
 			}
-			invokeID++ // Инкрементируем invokeID для следующего запроса
+			invokeID++
 		}
 	}
 }
 
 // CollectWaveforms собирает и обрабатывает пакеты данных осциллограмм.
 func (c *ComputerClient) CollectWaveforms(ctx context.Context) {
-	log.Println("Запуск рутины CollectWaveforms...")
+	c.SafeLog("Запуск рутины CollectWaveforms...")
 	// Пример цикла, который будет остановлен при отмене контекста
 	for {
 		select {
 		case <-ctx.Done():
-			log.Println("СollectWaveforms: Контекст отменен, завершение рутины.")
+			c.SafeLog("СollectWaveforms: Контекст отменен, завершение рутины.")
 			return
 		default:
 			// Здесь будет логика чтения данных Waveforms
@@ -62,12 +53,12 @@ func (c *ComputerClient) CollectWaveforms(ctx context.Context) {
 
 // CollectAlarms собирает и обрабатывает пакеты тревог.
 func (c *ComputerClient) CollectAlarms(ctx context.Context) {
-	log.Println("Запуск рутины CollectAlarms...")
+	c.SafeLog("Запуск рутины CollectAlarms...")
 	// Пример цикла, который будет остановлен при отмене контекста
 	for {
 		select {
 		case <-ctx.Done():
-			log.Println("CollectAlarms: Контекст отменен, завершение рутины.")
+			c.SafeLog("CollectAlarms: Контекст отменен, завершение рутины.")
 			return
 		default:
 			// Здесь будет логика чтения данных Alarms
@@ -80,6 +71,6 @@ func (c *ComputerClient) CollectAlarms(ctx context.Context) {
 
 // sendPollActionAlarm отправляет запрос Polled Event Report для получения информации о тревогах.
 func (c *ComputerClient) sendPollActionAlarm() {
-	log.Println("Отправка запроса Polled Event Report...")
+	c.SafeLog("Отправка запроса Polled Event Report...")
 	// Здесь будет логика создания и отправки пакета Polled Event Report
 }

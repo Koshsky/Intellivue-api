@@ -5,6 +5,9 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"log"
+	"strings"
+	"sync"
 )
 
 type PollInfoList struct {
@@ -61,20 +64,32 @@ func (pil *PollInfoList) UnmarshalBinary(r io.Reader) error {
 	if err := binary.Read(r, binary.BigEndian, &pollCount); err != nil {
 		return fmt.Errorf("failed to read observation count: %w", err)
 	}
-
 	var pollDataLength uint16
 	if err := binary.Read(r, binary.BigEndian, &pollDataLength); err != nil {
 		return fmt.Errorf("failed to read observation data length: %w", err)
 	}
 
-	listReader := io.LimitReader(r, int64(pollDataLength))
-
 	pil.Value = make([]SingleContextPoll, pollCount)
 	for i := uint16(0); i < pollCount; i++ {
-		if err := pil.Value[i].UnmarshalBinary(listReader); err != nil {
+		if err := pil.Value[i].UnmarshalBinary(r); err != nil {
 			return fmt.Errorf("failed to unmarshal SingleContextPoll at index %d: %w", i, err)
 		}
 	}
 
 	return nil
+}
+
+func (p *PollInfoList) ShowInfo(mu *sync.Mutex, indentationLevel int) {
+	indent := strings.Repeat("  ", indentationLevel)
+
+	mu.Lock()
+	log.Printf("%s<PollInfoList>", indent)
+	log.Printf("%s  Value:", indent)
+	log.Printf("%s  Count: %d", indent, p.Count())
+	log.Printf("%s  Length: %d", indent, p.Length())
+	mu.Unlock()
+
+	for _, poll := range p.Value {
+		poll.ShowInfo(mu, indentationLevel+1)
+	}
 }

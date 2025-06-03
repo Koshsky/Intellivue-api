@@ -2,12 +2,15 @@ package intellivue
 
 import (
 	"bytes"
+	"sync"
 	"testing"
 
 	. "github.com/Koshsky/Intellivue-api/pkg/intellivue/packages"
 	. "github.com/Koshsky/Intellivue-api/pkg/intellivue/structures"
 	. "github.com/Koshsky/Intellivue-api/pkg/intellivue/utils"
 )
+
+var testMutex sync.Mutex // Мьютекс для синхронизации вывода в тестах
 
 func TestAssocReqMessage(t *testing.T) {
 	msg := NewAssocReqMessage()
@@ -44,6 +47,6 @@ func TestAssocReqMessage(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to marshal message: %v", err)
 	}
-	PrintHexDump("Complete Message", fullMessage)
+	PrintHexDump(&testMutex, "Complete Message", fullMessage)
 
 }

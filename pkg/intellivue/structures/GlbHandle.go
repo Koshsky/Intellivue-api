@@ -5,6 +5,9 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"log"
+	"strings"
+	"sync"
 )
 
 type GlbHandle struct {
@@ -39,4 +42,14 @@ func (g *GlbHandle) UnmarshalBinary(reader io.Reader) error {
 	}
 
 	return nil
+}
+
+// ShowInfo выводит информацию о структуре GlbHandle через предоставленный канал логов.
+func (g *GlbHandle) ShowInfo(mu *sync.Mutex, indentationLevel int) {
+	indent := strings.Repeat("  ", indentationLevel)
+	mu.Lock()
+	log.Printf("%s--- GlbHandle ---", indent)
+	log.Printf("%s ContextID: 0x%X", indent, g.ContextID)
+	log.Printf("%s Handle: %d", indent, g.Handle)
+	mu.Unlock()
 }

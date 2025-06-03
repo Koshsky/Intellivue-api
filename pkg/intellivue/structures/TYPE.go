@@ -5,13 +5,15 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"log"
+	"strings"
+	"sync"
 )
 
 type NomPartition uint16
 type OIDType uint16
 
 const (
-	// Partition IDs
 	NOM_PART_OBJ         NomPartition = 0x0001 // Object oriented element, device nomenclature
 	NOM_PART_SCADA       NomPartition = 0x0002 // Types of measurement and place of the measurement
 	NOM_PART_EVT         NomPartition = 0x0003 // Codes for alerts
@@ -21,12 +23,11 @@ const (
 	NOM_PART_EMFC        NomPartition = 0x0401 // EMFC
 	NOM_PART_SETTINGS    NomPartition = 0x0402 // Settings
 
-	// Managed Object Classes (MOC)
-	NOM_MOC_VMO_METRIC_NU    OIDType = 0x0402 // numerics
-	NOM_MOC_VMO_METRIC_SA_RT OIDType = 0x0402 // waves
-	NOM_MOC_VMO_AL_MON       OIDType = 0x0402 // alerts
-	NOM_MOC_PT_DEMOG         OIDType = 0x0402 // Pat. Demog
-	NOM_MOC_VMS_MDS          OIDType = 0x0402 // MDS
+	NOM_MOC_VMO_METRIC_NU    OIDType = 0x0006 // numerics
+	NOM_MOC_VMO_METRIC_SA_RT OIDType = 0x0009 // waves
+	NOM_MOC_VMO_AL_MON       OIDType = 0x0036 // alerts
+	NOM_MOC_PT_DEMOG         OIDType = 0x002a // Pat. Demog
+	NOM_MOC_VMS_MDS          OIDType = 0x0021 // MDS
 )
 
 // Whenever it is not clear from the context,
@@ -66,4 +67,13 @@ func (t *TYPE) UnmarshalBinary(r io.Reader) error {
 	}
 
 	return nil
+}
+
+func (t *TYPE) ShowInfo(mu *sync.Mutex, indentationLevel int) {
+	indent := strings.Repeat("  ", indentationLevel)
+	mu.Lock()
+	log.Printf("%s<TYPE>", indent)
+	log.Printf("%s  Partition: 0x%X", indent, t.Partition)
+	log.Printf("%s  Code: %d", indent, t.Code)
+	mu.Unlock()
 }

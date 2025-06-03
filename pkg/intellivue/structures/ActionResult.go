@@ -5,6 +5,19 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"log"
+	"strings"
+	"sync"
+)
+
+// Command Types
+const (
+	CMD_EVENT_REPORT           CMDType = 0x0000 // Event Report
+	CMD_CONFIRMED_EVENT_REPORT CMDType = 0x0001 // Confirmed Event Report
+	CMD_GET                    CMDType = 0x0003 // Get
+	CMD_SET                    CMDType = 0x0004 // Set
+	CMD_CONFIRMED_SET          CMDType = 0x0005 // Confirmed Set
+	CMD_CONFIRMED_ACTION       CMDType = 0x0007 // Confirmed Action
 )
 
 type ActionResult struct {
@@ -53,4 +66,16 @@ func (a *ActionResult) UnmarshalBinary(reader io.Reader) error {
 	}
 
 	return nil
+}
+
+func (a *ActionResult) ShowInfo(mu *sync.Mutex, indentationLevel int) {
+	indent := strings.Repeat("  ", indentationLevel)
+	mu.Lock()
+	log.Printf("%s<ActionResult>", indent)
+	mu.Unlock()
+	a.ManagedObject.ShowInfo(mu, indentationLevel+1)
+	mu.Lock()
+	log.Printf("%s  ActionType: 0x%X", indent, a.ActionType)
+	log.Printf("%s  Length: %d", indent, a.Length)
+	mu.Unlock()
 }

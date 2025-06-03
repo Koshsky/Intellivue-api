@@ -5,6 +5,9 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"log"
+	"strings"
+	"sync"
 )
 
 type PollMdibDataReply struct {
@@ -17,7 +20,7 @@ type PollMdibDataReply struct {
 }
 
 func (p *PollMdibDataReply) Size() uint16 {
-	return 2 + 4 + 8 + 2 + 2 + 2 + p.PollInfoList.Size()
+	return 20 + p.PollInfoList.Size()
 }
 
 func (p *PollMdibDataReply) MarshalBinary() ([]byte, error) {
@@ -71,12 +74,30 @@ func (p *PollMdibDataReply) UnmarshalBinary(r io.Reader) error {
 		return fmt.Errorf("failed to read PollMdibDataReply.PolledAttrGrp: %w", err)
 	}
 
-	if p.PollInfoList == nil {
-		p.PollInfoList = &PollInfoList{}
-	}
+	p.PollInfoList = &PollInfoList{}
 	if err := p.PollInfoList.UnmarshalBinary(r); err != nil {
 		return fmt.Errorf("failed to unmarshal PollMdibDataReply.PollInfoList: %w", err)
 	}
 
 	return nil
+}
+
+func (p *PollMdibDataReply) ShowInfo(mu *sync.Mutex, indentationLevel int) {
+	indent := strings.Repeat("  ", indentationLevel)
+
+	mu.Lock()
+	log.Printf("%s<PollMdibDataReply>", indent)
+	log.Printf("%s  PollNumber: 0x%X", indent, p.PollNumber)
+	log.Printf("%s  RelTimeStamp: 0x%X", indent, p.RelTimeStamp)
+	log.Printf("%s  AbsTimeStamp: %d", indent, p.AbsTimeStamp)
+	mu.Unlock()
+
+	p.PolledObjType.ShowInfo(mu, indentationLevel+1)
+
+	mu.Lock()
+	log.Printf("%s  PolledAttrGrp: %d", indent, p.PolledAttrGrp)
+	mu.Unlock()
+
+	p.PollInfoList.ShowInfo(mu, indentationLevel+1)
+
 }

@@ -5,6 +5,9 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"log"
+	"strings"
+	"sync"
 )
 
 type SingleContextPoll struct {
@@ -62,6 +65,9 @@ func (s *SingleContextPoll) MarshalBinary() ([]byte, error) {
 }
 
 func (s *SingleContextPoll) UnmarshalBinary(r io.Reader) error {
+	if err := binary.Read(r, binary.BigEndian, &s.ContextID); err != nil {
+		return fmt.Errorf("failed to read ContextID: %w", err)
+	}
 	var obervationCount uint16
 	if err := binary.Read(r, binary.BigEndian, &obervationCount); err != nil {
 		return fmt.Errorf("failed to read observation count: %w", err)
@@ -72,14 +78,25 @@ func (s *SingleContextPoll) UnmarshalBinary(r io.Reader) error {
 		return fmt.Errorf("failed to read observation data length: %w", err)
 	}
 
-	listReader := io.LimitReader(r, int64(observationDataLength))
-
 	s.PollInfo = make([]ObservationPoll, obervationCount)
 	for i := uint16(0); i < obervationCount; i++ {
-		if err := s.PollInfo[i].UnmarshalBinary(listReader); err != nil {
+		if err := s.PollInfo[i].UnmarshalBinary(r); err != nil {
 			return fmt.Errorf("failed to unmarshal ObservationPoll at index %d: %w", i, err)
 		}
 	}
 
 	return nil
+}
+
+func (s *SingleContextPoll) ShowInfo(mu *sync.Mutex, indentationLevel int) {
+	indent := strings.Repeat("  ", indentationLevel)
+
+	mu.Lock()
+	log.Printf("%s<SingleContextPoll>", indent)
+	log.Printf("%s  ContextID: %s", indent, s.ContextID)
+	mu.Unlock()
+
+	for _, op := range s.PollInfo {
+		op.ShowInfo(mu, indentationLevel+1)
+	}
 }

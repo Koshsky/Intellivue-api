@@ -5,6 +5,9 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"log"
+	"strings"
+	"sync"
 )
 
 type ObservationPoll struct {
@@ -53,4 +56,15 @@ func (op *ObservationPoll) UnmarshalBinary(r io.Reader) error {
 	}
 
 	return nil
+}
+
+func (op *ObservationPoll) ShowInfo(mu *sync.Mutex, indentationLevel int) {
+	indent := strings.Repeat("  ", indentationLevel)
+
+	mu.Lock()
+	log.Printf("%s<ObservationPoll>", indent)
+	log.Printf("%s  Handle: %s", indent, op.Handle)
+	mu.Unlock()
+
+	op.Attributes.ShowInfo(mu, indentationLevel+1)
 }

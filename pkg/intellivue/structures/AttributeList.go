@@ -5,6 +5,9 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"log"
+	"strings"
+	"sync"
 )
 
 type AttributeList struct {
@@ -66,14 +69,26 @@ func (a *AttributeList) UnmarshalBinary(r io.Reader) error {
 		return fmt.Errorf("failed to read attributes data length: %w", err)
 	}
 
-	listReader := io.LimitReader(r, int64(attrDataLength))
-
 	a.Value = make([]AVAType, attrCount)
 	for i := uint16(0); i < attrCount; i++ {
-		if err := a.Value[i].UnmarshalBinary(listReader); err != nil {
+		if err := a.Value[i].UnmarshalBinary(r); err != nil {
 			return fmt.Errorf("failed to unmarshal AVAType at index %d: %w", i, err)
 		}
 	}
 
 	return nil
+}
+
+func (a *AttributeList) ShowInfo(mu *sync.Mutex, indentationLevel int) {
+	indent := strings.Repeat("  ", indentationLevel)
+
+	mu.Lock()
+	log.Printf("%s<AttributeList>", indent)
+	log.Printf("%s  Count: %d", indent, a.Count())
+	log.Printf("%s  Length: %d", indent, a.Length())
+	mu.Unlock()
+
+	for _, ava := range a.Value {
+		ava.ShowInfo(mu, indentationLevel+1)
+	}
 }

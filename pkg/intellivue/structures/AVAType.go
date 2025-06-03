@@ -6,6 +6,11 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"strings"
+	"sync"
+
+	"github.com/Koshsky/Intellivue-api/pkg/intellivue/utils"
+	// "sync" // Удаляем импорт sync, если он больше не нужен
 )
 
 type AVAType struct {
@@ -48,6 +53,8 @@ func (a *AVAType) MarshalBinary() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+// UnmarshalBinary читает данные из io.Reader и заполняет структуру AVAType.
+// Возвращает сигнатуру к исходной без мьютекса и канала логов.
 func (a *AVAType) UnmarshalBinary(r io.Reader) error {
 	if err := binary.Read(r, binary.BigEndian, &a.AttributeID); err != nil {
 		return fmt.Errorf("ошибка чтения AttributeID: %w", err)
@@ -59,19 +66,35 @@ func (a *AVAType) UnmarshalBinary(r io.Reader) error {
 
 	switch a.AttributeID {
 	case NOM_MOC_VMO_METRIC_NU:
-		return fmt.Errorf("ошибка парсинга Numeric Value")
+		// TODO: Парсинг Numeric Value. Логирование здесь не будет выполняться.
+		return fmt.Errorf("TODO: Реализовать парсинг Numeric Value") // Пока возвращаем ошибку
 
 	default:
-		log.Printf("Неизвестный AttributeID: 0x%04X. Читаем %d байт значения как []byte.", a.AttributeID, a.Length)
+		// Логирование неизвестного AttributeID и прочитанных байт будет выполняться в вызывающем коде.
 		valueBytes := make([]byte, a.Length)
 		if a.Length > 0 {
-			if _, err := io.ReadFull(r, valueBytes); err != nil {
+			limitedReader := io.LimitReader(r, int64(a.Length))
+			if _, err := io.ReadFull(limitedReader, valueBytes); err != nil {
 				return fmt.Errorf("ошибка чтения байт неизвестного Value: %w", err)
 			}
 		}
 		a.Value = valueBytes
-		log.Printf("  Прочитанные байты значения: %x", valueBytes)
 	}
 
 	return nil
+}
+
+func (a *AVAType) ShowInfo(mu *sync.Mutex, indentationLevel int) {
+	indent := strings.Repeat("  ", indentationLevel)
+
+	mu.Lock()
+	log.Printf("%s<AttributeList>", indent)
+	log.Printf("%s  AttributeID: %d", indent, a.AttributeID)
+	log.Printf("%s  Length: %d", indent, a.Length)
+	if valueBytes, ok := a.Value.([]byte); ok {
+		log.Printf("%s  value: %s", indent, utils.PrintHex(valueBytes))
+	} else {
+		log.Printf("%s  value: <not []byte>", indent)
+	}
+	mu.Unlock()
 }
