@@ -41,7 +41,7 @@ func (o PollProfileExt) MarshalBinary() ([]byte, error) {
 	var buf bytes.Buffer
 
 	if err := binary.Write(&buf, binary.BigEndian, o.Options); err != nil {
-		return nil, fmt.Errorf("failed to write options: %v", err)
+		return nil, fmt.Errorf("failed to marshal options: %v", err)
 	}
 
 	ext_attr, err := o.ExtAttr.MarshalBinary()
@@ -55,7 +55,7 @@ func (o PollProfileExt) MarshalBinary() ([]byte, error) {
 
 func (o PollProfileExt) UnmarshalBinary(r io.Reader) error {
 	if err := binary.Read(r, binary.BigEndian, &o.Options); err != nil {
-		return fmt.Errorf("failed to read Options: %v", err)
+		return fmt.Errorf("failed to unmarshal Options: %v", err)
 	}
 
 	o.ExtAttr = &AttributeList{}

@@ -33,11 +33,10 @@ func (r *ROERapdu) MarshalBinary() ([]byte, error) {
 	buf := new(bytes.Buffer)
 
 	if err := binary.Write(buf, binary.BigEndian, r.InvokeID); err != nil {
-		return nil, fmt.Errorf("ошибка записи InvokeID: %w", err)
+		return nil, fmt.Errorf("failed to marshal InvokeID: %w", err)
 	}
-
 	if err := binary.Write(buf, binary.BigEndian, r.Length); err != nil {
-		return nil, fmt.Errorf("ошибка записи Length: %w", err)
+		return nil, fmt.Errorf("failed to marshal Length: %w", err)
 	}
 
 	return buf.Bytes(), nil
@@ -45,11 +44,10 @@ func (r *ROERapdu) MarshalBinary() ([]byte, error) {
 
 func (r *ROERapdu) UnmarshalBinary(reader io.Reader) error {
 	if err := binary.Read(reader, binary.BigEndian, &r.InvokeID); err != nil {
-		return fmt.Errorf("ошибка чтения InvokeID: %w", err)
+		return fmt.Errorf("failed to unmarshal InvokeID: %w", err)
 	}
-
 	if err := binary.Read(reader, binary.BigEndian, &r.Length); err != nil {
-		return fmt.Errorf("ошибка чтения Length: %w", err)
+		return fmt.Errorf("failed to unmarshal Length: %w", err)
 	}
 
 	return nil

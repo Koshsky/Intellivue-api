@@ -23,11 +23,10 @@ func (s *SPpdu) MarshalBinary() ([]byte, error) {
 	buf := new(bytes.Buffer)
 
 	if err := binary.Write(buf, binary.BigEndian, s.SessionID); err != nil {
-		return nil, fmt.Errorf("ошибка записи SessionID: %w", err)
+		return nil, fmt.Errorf("failed to marshal SessionID: %w", err)
 	}
-
 	if err := binary.Write(buf, binary.BigEndian, s.PContextID); err != nil {
-		return nil, fmt.Errorf("ошибка записи PContextID: %w", err)
+		return nil, fmt.Errorf("failed to marshal PContextID: %w", err)
 	}
 
 	return buf.Bytes(), nil
@@ -35,11 +34,10 @@ func (s *SPpdu) MarshalBinary() ([]byte, error) {
 
 func (s *SPpdu) UnmarshalBinary(reader io.Reader) error {
 	if err := binary.Read(reader, binary.BigEndian, &s.SessionID); err != nil {
-		return fmt.Errorf("ошибка чтения SessionID: %w", err)
+		return fmt.Errorf("failed to unmarshal SessionID: %w", err)
 	}
-
 	if err := binary.Read(reader, binary.BigEndian, &s.PContextID); err != nil {
-		return fmt.Errorf("ошибка чтения PContextID: %w", err)
+		return fmt.Errorf("failed to unmarshal PContextID: %w", err)
 	}
 
 	return nil

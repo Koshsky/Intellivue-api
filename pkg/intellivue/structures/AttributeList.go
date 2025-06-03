@@ -40,16 +40,16 @@ func (a *AttributeList) MarshalBinary() ([]byte, error) {
 	var buf bytes.Buffer
 
 	if err := binary.Write(&buf, binary.BigEndian, a.Count()); err != nil {
-		return nil, fmt.Errorf("ошибка записи Count: %w", err)
+		return nil, fmt.Errorf("failed to marshal Count: %w", err)
 	}
 	if err := binary.Write(&buf, binary.BigEndian, a.Length()); err != nil {
-		return nil, fmt.Errorf("ошибка записи Length: %w", err)
+		return nil, fmt.Errorf("failed to marshal Length: %w", err)
 	}
 
 	for _, ava := range a.Value {
 		avaData, err := ava.MarshalBinary()
 		if err != nil {
-			return nil, fmt.Errorf("ошибка маршалинга AVAType: %w", err)
+			return nil, fmt.Errorf("failed to marshal AVAType: %w", err)
 		}
 		buf.Write(avaData)
 	}
@@ -60,18 +60,18 @@ func (a *AttributeList) MarshalBinary() ([]byte, error) {
 func (a *AttributeList) UnmarshalBinary(r io.Reader) error {
 	var attrCount uint16
 	if err := binary.Read(r, binary.BigEndian, &attrCount); err != nil {
-		return fmt.Errorf("failed to read attribute count: %w", err)
+		return fmt.Errorf("failed to unmarshal attribute count: %w", err)
 	}
 
 	var attrDataLength uint16
 	if err := binary.Read(r, binary.BigEndian, &attrDataLength); err != nil {
-		return fmt.Errorf("failed to read attributes data length: %w", err)
+		return fmt.Errorf("failed to unmarshal attributes data length: %w", err)
 	}
 
 	a.Value = make([]AVAType, attrCount)
 	for i := uint16(0); i < attrCount; i++ {
 		if err := a.Value[i].UnmarshalBinary(r); err != nil {
-			return fmt.Errorf("failed to unmarshal AVAType at index %d: %w", i, err)
+			return fmt.Errorf("unmarshal erorr AVAType[%d]: %w", i, err)
 		}
 	}
 

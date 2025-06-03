@@ -26,30 +26,28 @@ func (p *PollMdibDataReply) MarshalBinary() ([]byte, error) {
 	buf := new(bytes.Buffer)
 
 	if err := binary.Write(buf, binary.BigEndian, p.PollNumber); err != nil {
-		return nil, fmt.Errorf("ошибка записи PollNumber: %w", err)
+		return nil, fmt.Errorf("failed to marshal PollNumber: %w", err)
 	}
-
 	if err := binary.Write(buf, binary.BigEndian, p.RelTimeStamp); err != nil {
-		return nil, fmt.Errorf("ошибка записи RelTimeStamp: %w", err)
+		return nil, fmt.Errorf("failed to marshal RelTimeStamp: %w", err)
 	}
-
 	if err := binary.Write(buf, binary.BigEndian, p.AbsTimeStamp); err != nil {
-		return nil, fmt.Errorf("ошибка записи AbsTimeStamp: %w", err)
+		return nil, fmt.Errorf("failed to marshal AbsTimeStamp: %w", err)
 	}
 
 	PolledObjTypeData, err := p.PolledObjType.MarshalBinary()
 	if err != nil {
-		return nil, fmt.Errorf("ошибка маршалинга PolledObjType: %w", err)
+		return nil, fmt.Errorf("failed to marshal PolledObjType: %w", err)
 	}
 	buf.Write(PolledObjTypeData)
 
 	if err := binary.Write(buf, binary.BigEndian, p.PolledAttrGrp); err != nil {
-		return nil, fmt.Errorf("ошибка записи PolledAttrGrp: %w", err)
+		return nil, fmt.Errorf("failed to marshal PolledAttrGrp: %w", err)
 	}
 
 	pollInfoListData, err := p.PollInfoList.MarshalBinary()
 	if err != nil {
-		return nil, fmt.Errorf("ошибка маршалинга PollInfoList: %w", err)
+		return nil, fmt.Errorf("failed to marshal PollInfoList: %w", err)
 	}
 	buf.Write(pollInfoListData)
 
@@ -58,24 +56,24 @@ func (p *PollMdibDataReply) MarshalBinary() ([]byte, error) {
 
 func (p *PollMdibDataReply) UnmarshalBinary(r io.Reader) error {
 	if err := binary.Read(r, binary.BigEndian, &p.PollNumber); err != nil {
-		return fmt.Errorf("failed to read PollMdibDataReply.PollNumber: %w", err)
+		return fmt.Errorf("failed to unmarshal PollNumber: %w", err)
 	}
 	if err := binary.Read(r, binary.BigEndian, &p.RelTimeStamp); err != nil {
-		return fmt.Errorf("failed to read PollMdibDataReply.RelTimeStamp: %w", err)
+		return fmt.Errorf("failed to unmarshal RelTimeStamp: %w", err)
 	}
 	if err := binary.Read(r, binary.BigEndian, &p.AbsTimeStamp); err != nil {
-		return fmt.Errorf("failed to read PollMdibDataReply.AbsTimeStamp: %w", err)
+		return fmt.Errorf("failed to unmarshal AbsTimeStamp: %w", err)
 	}
 	if err := p.PolledObjType.UnmarshalBinary(r); err != nil {
-		return fmt.Errorf("failed to unmarshal PollMdibDataReply.PolledObjType: %w", err)
+		return fmt.Errorf("failed to unmarshal PolledObjType: %w", err)
 	}
 	if err := binary.Read(r, binary.BigEndian, &p.PolledAttrGrp); err != nil {
-		return fmt.Errorf("failed to read PollMdibDataReply.PolledAttrGrp: %w", err)
+		return fmt.Errorf("failed to unmarshal PolledAttrGrp: %w", err)
 	}
 
 	p.PollInfoList = &PollInfoList{}
 	if err := p.PollInfoList.UnmarshalBinary(r); err != nil {
-		return fmt.Errorf("failed to unmarshal PollMdibDataReply.PollInfoList: %w", err)
+		return fmt.Errorf("failed to unmarshal PollInfoList: %w", err)
 	}
 
 	return nil

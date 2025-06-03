@@ -31,8 +31,6 @@ const (
 
 // Whenever it is not clear from the context,
 // from which nomenclature value range the OIDType comes,
-// the TYPE data type is used. Here,
-// the nomenclature value range (the partition) is explicitly identified.
 type TYPE struct {
 	Partition NomPartition
 	Code      OIDType
@@ -46,11 +44,10 @@ func (t *TYPE) MarshalBinary() ([]byte, error) {
 	buf := new(bytes.Buffer)
 
 	if err := binary.Write(buf, binary.BigEndian, t.Partition); err != nil {
-		return nil, fmt.Errorf("failed to write Partition: %w", err)
+		return nil, fmt.Errorf("failed to marshal Partition: %w", err)
 	}
-
 	if err := binary.Write(buf, binary.BigEndian, t.Code); err != nil {
-		return nil, fmt.Errorf("failed to write Code: %w", err)
+		return nil, fmt.Errorf("failed to marshal Code: %w", err)
 	}
 
 	return buf.Bytes(), nil
@@ -58,11 +55,10 @@ func (t *TYPE) MarshalBinary() ([]byte, error) {
 
 func (t *TYPE) UnmarshalBinary(r io.Reader) error {
 	if err := binary.Read(r, binary.BigEndian, &t.Partition); err != nil {
-		return fmt.Errorf("failed to read Partition: %w", err)
+		return fmt.Errorf("failed to unmarshal Partition: %w", err)
 	}
-
 	if err := binary.Read(r, binary.BigEndian, &t.Code); err != nil {
-		return fmt.Errorf("failed to read Code: %w", err)
+		return fmt.Errorf("failed to unmarshal Code: %w", err)
 	}
 
 	return nil

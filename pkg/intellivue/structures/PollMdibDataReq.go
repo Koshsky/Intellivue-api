@@ -21,20 +21,17 @@ func (p *PollMdibDataReq) MarshalBinary() ([]byte, error) {
 	buf := new(bytes.Buffer)
 
 	if err := binary.Write(buf, binary.BigEndian, p.PollNumber); err != nil {
-		return nil, fmt.Errorf("ошибка записи PollNumber: %w", err)
+		return nil, fmt.Errorf("failed to marshal PollNumber: %w", err)
 	}
 
 	typeData, err := p.PolledObjType.MarshalBinary()
 	if err != nil {
-		return nil, fmt.Errorf("ошибка маршалинга PolledObjType: %w", err) // Fixed error message
+		return nil, fmt.Errorf("failed to marshal PolledObjType: %w", err) // Fixed error message
 	}
-
-	if _, err := buf.Write(typeData); err != nil {
-		return nil, fmt.Errorf("ошибка записи PolledObjType: %w", err)
-	}
+	buf.Write(typeData)
 
 	if err := binary.Write(buf, binary.BigEndian, p.PolledAttrGrp); err != nil {
-		return nil, fmt.Errorf("ошибка записи PolledAttrGrp: %w", err)
+		return nil, fmt.Errorf("failed to marshal PolledAttrGrp: %w", err)
 	}
 
 	return buf.Bytes(), nil
@@ -42,15 +39,13 @@ func (p *PollMdibDataReq) MarshalBinary() ([]byte, error) {
 
 func (p PollMdibDataReq) UnmarshalBinary(r io.Reader) error {
 	if err := binary.Read(r, binary.BigEndian, &p.PollNumber); err != nil {
-		return fmt.Errorf("failed to read PollNumber: %v", err)
+		return fmt.Errorf("failed to unmarshal PollNumber: %v", err)
 	}
-
 	if err := p.PolledObjType.UnmarshalBinary(r); err != nil {
 		return fmt.Errorf("failed to unmarshal PolledObjType: %v", err)
 	}
-
 	if err := binary.Read(r, binary.BigEndian, &p.PolledAttrGrp); err != nil {
-		return fmt.Errorf("failed to read PolledAttrGrp: %v", err)
+		return fmt.Errorf("failed to unmarshal PolledAttrGrp: %v", err)
 	}
 
 	return nil

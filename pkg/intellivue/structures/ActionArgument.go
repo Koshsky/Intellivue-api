@@ -28,20 +28,18 @@ func (a *ActionArgument) MarshalBinary() ([]byte, error) {
 
 	objData, err := a.ManagedObject.MarshalBinary()
 	if err != nil {
-		return nil, fmt.Errorf("ошибка маршалинга ManagedObject: %w", err)
+		return nil, fmt.Errorf("failed to marshal ManagedObject: %w", err)
 	}
 	buf.Write(objData)
 
 	if err := binary.Write(buf, binary.BigEndian, a.Scope); err != nil {
-		return nil, fmt.Errorf("ошибка записи Scope: %w", err)
+		return nil, fmt.Errorf("failed to marshal Scope: %w", err)
 	}
-
 	if err := binary.Write(buf, binary.BigEndian, a.ActionType); err != nil {
-		return nil, fmt.Errorf("ошибка записи ActionType: %w", err)
+		return nil, fmt.Errorf("failed to marshal ActionType: %w", err)
 	}
-
 	if err := binary.Write(buf, binary.BigEndian, a.Length); err != nil {
-		return nil, fmt.Errorf("ошибка записи Length: %w", err)
+		return nil, fmt.Errorf("failed to marshal Length: %w", err)
 	}
 
 	return buf.Bytes(), nil
@@ -49,16 +47,16 @@ func (a *ActionArgument) MarshalBinary() ([]byte, error) {
 
 func (a *ActionArgument) UnmarshalBinary(reader io.Reader) error {
 	if err := a.ManagedObject.UnmarshalBinary(reader); err != nil {
-		return fmt.Errorf("ошибка UnmarshalBinary для ManagedObject: %w", err)
+		return fmt.Errorf("failed to unmarshal ManagedObject: %w", err)
 	}
 	if err := binary.Read(reader, binary.BigEndian, &a.Scope); err != nil {
-		return fmt.Errorf("ошибка чтения Scope: %w", err)
+		return fmt.Errorf("failed to unmarshal Scope: %w", err)
 	}
 	if err := binary.Read(reader, binary.BigEndian, &a.ActionType); err != nil {
-		return fmt.Errorf("ошибка чтения ActionType: %w", err)
+		return fmt.Errorf("failed to unmarshal ActionType: %w", err)
 	}
 	if err := binary.Read(reader, binary.BigEndian, &a.Length); err != nil {
-		return fmt.Errorf("ошибка чтения Length: %w", err)
+		return fmt.Errorf("failed to unmarshal Length: %w", err)
 	}
 
 	return nil

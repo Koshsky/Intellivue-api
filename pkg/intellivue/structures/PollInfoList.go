@@ -14,43 +14,42 @@ type PollInfoList struct {
 }
 
 func (p *PollInfoList) Size() uint16 {
-	return 4 + p.Length() // count + length + list
+	return 4 + p.Length()
 }
 
-func (pil *PollInfoList) Count() uint16 {
-	if pil == nil {
+func (p *PollInfoList) Count() uint16 {
+	if p == nil {
 		return 0
 	}
-	return uint16(len(pil.Value))
+	return uint16(len(p.Value))
 }
 
-func (pil *PollInfoList) Length() uint16 {
-	if pil == nil || len(pil.Value) == 0 {
+func (p *PollInfoList) Length() uint16 {
+	if p == nil || len(p.Value) == 0 {
 		return 0
 	}
 
 	var total uint16
-	for _, op := range pil.Value {
+	for _, op := range p.Value {
 		total += op.Size()
 	}
 	return total
 }
 
-func (pil *PollInfoList) MarshalBinary() ([]byte, error) {
+func (p *PollInfoList) MarshalBinary() ([]byte, error) {
 	buf := new(bytes.Buffer)
 
-	if err := binary.Write(buf, binary.BigEndian, pil.Count()); err != nil {
-		return nil, fmt.Errorf("ошибка записи Count: %w", err)
+	if err := binary.Write(buf, binary.BigEndian, p.Count()); err != nil {
+		return nil, fmt.Errorf("failed to marshal Count: %w", err)
+	}
+	if err := binary.Write(buf, binary.BigEndian, p.Length()); err != nil {
+		return nil, fmt.Errorf("failed to marshal Length: %w", err)
 	}
 
-	if err := binary.Write(buf, binary.BigEndian, pil.Length()); err != nil {
-		return nil, fmt.Errorf("ошибка записи Length: %w", err)
-	}
-
-	for i, poll := range pil.Value {
+	for i, poll := range p.Value {
 		pollData, err := poll.MarshalBinary()
 		if err != nil {
-			return nil, fmt.Errorf("ошибка маршалинга SingleContextPoll %d: %w", i, err)
+			return nil, fmt.Errorf("failed to marshal SingleContextPoll %d: %w", i, err)
 		}
 		buf.Write(pollData)
 	}
@@ -58,20 +57,20 @@ func (pil *PollInfoList) MarshalBinary() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (pil *PollInfoList) UnmarshalBinary(r io.Reader) error {
+func (p *PollInfoList) UnmarshalBinary(r io.Reader) error {
 	var pollCount uint16
 	if err := binary.Read(r, binary.BigEndian, &pollCount); err != nil {
-		return fmt.Errorf("failed to read observation count: %w", err)
+		return fmt.Errorf("failed to unmarshal Count: %w", err)
 	}
 	var pollDataLength uint16
 	if err := binary.Read(r, binary.BigEndian, &pollDataLength); err != nil {
-		return fmt.Errorf("failed to read observation data length: %w", err)
+		return fmt.Errorf("failed to unmarshal Length: %w", err)
 	}
 
-	pil.Value = make([]SingleContextPoll, pollCount)
+	p.Value = make([]SingleContextPoll, pollCount)
 	for i := uint16(0); i < pollCount; i++ {
-		if err := pil.Value[i].UnmarshalBinary(r); err != nil {
-			return fmt.Errorf("failed to unmarshal SingleContextPoll at index %d: %w", i, err)
+		if err := p.Value[i].UnmarshalBinary(r); err != nil {
+			return fmt.Errorf("failed to unmarshal SingleContextPoll[%d]: %w", i, err)
 		}
 	}
 

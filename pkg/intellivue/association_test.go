@@ -27,7 +27,7 @@ func TestAssocReqMessage(t *testing.T) {
 		sessionHeaderBuf.WriteByte(msg.SessionHeader.Type)
 		liFieldTotalLength, err := LIField(totalLength).MarshalBinary()
 		if err != nil {
-			t.Fatalf("Ошибка маршалинга LIField для общей длины: %v", err)
+			t.Fatalf("failed to marshal LIField для общей длины: %v", err)
 		}
 		sessionHeaderBuf.Write(liFieldTotalLength)
 
@@ -35,7 +35,7 @@ func TestAssocReqMessage(t *testing.T) {
 		presentationHeaderBuf.WriteByte(msg.PresentationHeader.Prefix)
 		liFieldUserDataLen, err := LIField(len(userData)).MarshalBinary()
 		if err != nil {
-			t.Fatalf("Ошибка маршалинга LIField для длины пользовательских данных: %v", err)
+			t.Fatalf("failed to marshal LIField для длины пользовательских данных: %v", err)
 		}
 		presentationHeaderBuf.Write(liFieldUserDataLen)
 

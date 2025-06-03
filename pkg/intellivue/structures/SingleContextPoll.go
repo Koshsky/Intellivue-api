@@ -41,21 +41,19 @@ func (s *SingleContextPoll) MarshalBinary() ([]byte, error) {
 	buf := new(bytes.Buffer)
 
 	if err := binary.Write(buf, binary.BigEndian, s.ContextID); err != nil {
-		return nil, fmt.Errorf("ошибка записи ContextID: %w", err)
+		return nil, fmt.Errorf("failed to marshal ContextID: %w", err)
 	}
-
 	if err := binary.Write(buf, binary.BigEndian, s.Count()); err != nil {
-		return nil, fmt.Errorf("ошибка записи Count: %w", err)
+		return nil, fmt.Errorf("failed to marshal Count: %w", err)
 	}
-
 	if err := binary.Write(buf, binary.BigEndian, s.Length()); err != nil {
-		return nil, fmt.Errorf("ошибка записи Length: %w", err)
+		return nil, fmt.Errorf("failed to marshal Length: %w", err)
 	}
 
 	for _, op := range s.PollInfo {
 		opData, err := op.MarshalBinary()
 		if err != nil {
-			return nil, fmt.Errorf("ошибка маршалинга ObservationPoll: %w", err)
+			return nil, fmt.Errorf("failed to marshal ObservationPoll: %w", err)
 		}
 		buf.Write(opData)
 	}
@@ -65,22 +63,22 @@ func (s *SingleContextPoll) MarshalBinary() ([]byte, error) {
 
 func (s *SingleContextPoll) UnmarshalBinary(r io.Reader) error {
 	if err := binary.Read(r, binary.BigEndian, &s.ContextID); err != nil {
-		return fmt.Errorf("failed to read ContextID: %w", err)
+		return fmt.Errorf("failed to unmarshal ContextID: %w", err)
 	}
 	var obervationCount uint16
 	if err := binary.Read(r, binary.BigEndian, &obervationCount); err != nil {
-		return fmt.Errorf("failed to read observation count: %w", err)
+		return fmt.Errorf("failed to unmarshal Count: %w", err)
 	}
 
 	var observationDataLength uint16
 	if err := binary.Read(r, binary.BigEndian, &observationDataLength); err != nil {
-		return fmt.Errorf("failed to read observation data length: %w", err)
+		return fmt.Errorf("failed to unmarshal Length: %w", err)
 	}
 
 	s.PollInfo = make([]ObservationPoll, obervationCount)
 	for i := uint16(0); i < obervationCount; i++ {
 		if err := s.PollInfo[i].UnmarshalBinary(r); err != nil {
-			return fmt.Errorf("failed to unmarshal ObservationPoll at index %d: %w", i, err)
+			return fmt.Errorf("failed to unmarshal ObservationPoll[%d]: %w", i, err)
 		}
 	}
 

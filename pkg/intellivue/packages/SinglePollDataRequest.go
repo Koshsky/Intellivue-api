@@ -73,31 +73,31 @@ func (s *SinglePollDataRequest) MarshalBinary() ([]byte, error) {
 
 	SPpduBytes, err := s.SPpdu.MarshalBinary()
 	if err != nil {
-		return nil, fmt.Errorf("ошибка MarshalBinary для SPpdu: %w", err)
+		return nil, fmt.Errorf("failed to marshal SPpdu: %w", err)
 	}
 	buf.Write(SPpduBytes)
 
 	ROapdusBytes, err := s.ROapdus.MarshalBinary()
 	if err != nil {
-		return nil, fmt.Errorf("ошибка MarshalBinary для ROapdus: %w", err)
+		return nil, fmt.Errorf("failed to marshal ROapdus: %w", err)
 	}
 	buf.Write(ROapdusBytes)
 
 	ROIVapduBytes, err := s.ROIVapdu.MarshalBinary()
 	if err != nil {
-		return nil, fmt.Errorf("ошибка MarshalBinary для ROIVapdu: %w", err)
+		return nil, fmt.Errorf("failed to marshal ROIVapdu: %w", err)
 	}
 	buf.Write(ROIVapduBytes)
 
 	ActionArgumentBytes, err := s.ActionArgument.MarshalBinary()
 	if err != nil {
-		return nil, fmt.Errorf("ошибка MarshalBinary для ActionArgument: %w", err)
+		return nil, fmt.Errorf("failed to marshal ActionArgument: %w", err)
 	}
 	buf.Write(ActionArgumentBytes)
 
 	PollMdibDataReqBytes, err := s.PollMdibDataReq.MarshalBinary()
 	if err != nil {
-		return nil, fmt.Errorf("ошибка MarshalBinary для PollMdibDataReq: %w", err)
+		return nil, fmt.Errorf("failed to marshal PollMdibDataReq: %w", err)
 	}
 	buf.Write(PollMdibDataReqBytes)
 

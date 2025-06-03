@@ -14,7 +14,7 @@ func (c *ComputerClient) SendPollNumericAction(invokeID uint16) error {
 
 	dataToSend, err := msg.MarshalBinary()
 	if err != nil {
-		return fmt.Errorf("ошибка маршалинга SinglePollDataRequest: %w", err)
+		return fmt.Errorf("failed to marshal SinglePollDataRequest: %w", err)
 	}
 
 	if err := c.sendData(dataToSend); err != nil {
@@ -33,7 +33,7 @@ func (c *ComputerClient) SendPollAlarmAction(invokeID uint16) error {
 
 	dataToSend, err := msg.MarshalBinary()
 	if err != nil {
-		return fmt.Errorf("ошибка маршалинга SinglePollDataRequest: %w", err)
+		return fmt.Errorf("failed to marshal SinglePollDataRequest: %w", err)
 	}
 
 	if err := c.sendData(dataToSend); err != nil {

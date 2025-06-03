@@ -51,7 +51,7 @@ func (l ASNLength) Size() uint16 {
 func (l *ASNLength) UnmarshalBinary(r io.Reader) error {
 	var firstByte [1]byte
 	if _, err := r.Read(firstByte[:]); err != nil {
-		return fmt.Errorf("failed to read ASNLength first byte: %w", err)
+		return fmt.Errorf("failed to unmarshal ASNLength first byte: %w", err)
 	}
 	if firstByte[0] <= 127 {
 		*l = ASNLength(firstByte[0])
@@ -63,7 +63,7 @@ func (l *ASNLength) UnmarshalBinary(r io.Reader) error {
 	}
 	buf := make([]byte, lengthBytes)
 	if _, err := io.ReadFull(r, buf); err != nil {
-		return fmt.Errorf("failed to read ASNLength value bytes: %w", err)
+		return fmt.Errorf("failed to unmarshal ASNLength value bytes: %w", err)
 	}
 	var value uint32
 	for _, b := range buf {

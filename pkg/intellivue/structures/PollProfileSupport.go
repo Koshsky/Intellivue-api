@@ -43,22 +43,22 @@ func (p PollProfileSupport) MarshalBinary() ([]byte, error) {
 	var buf bytes.Buffer
 
 	if err := binary.Write(&buf, binary.BigEndian, p.PollProfileRevision); err != nil {
-		return nil, fmt.Errorf("failed to write PollProfileRevision: %v", err)
+		return nil, fmt.Errorf("failed to marshal PollProfileRevision: %v", err)
 	}
 	if err := binary.Write(&buf, binary.BigEndian, p.MinPollPeriod); err != nil {
-		return nil, fmt.Errorf("failed to write MinPollPeriod: %v", err)
+		return nil, fmt.Errorf("failed to marshal MinPollPeriod: %v", err)
 	}
 	if err := binary.Write(&buf, binary.BigEndian, p.MaxMtuRx); err != nil {
-		return nil, fmt.Errorf("failed to write MaxMtuRx: %v", err)
+		return nil, fmt.Errorf("failed to marshal MaxMtuRx: %v", err)
 	}
 	if err := binary.Write(&buf, binary.BigEndian, p.MaxMtuTx); err != nil {
-		return nil, fmt.Errorf("failed to write MaxMtuTx: %v", err)
+		return nil, fmt.Errorf("failed to marshal MaxMtuTx: %v", err)
 	}
 	if err := binary.Write(&buf, binary.BigEndian, p.MaxBwTx); err != nil {
-		return nil, fmt.Errorf("failed to write MaxBwTx: %v", err)
+		return nil, fmt.Errorf("failed to marshal MaxBwTx: %v", err)
 	}
 	if err := binary.Write(&buf, binary.BigEndian, p.Options); err != nil {
-		return nil, fmt.Errorf("failed to write Options: %v", err)
+		return nil, fmt.Errorf("failed to marshal Options: %v", err)
 	}
 
 	optPackagesData, err := p.OptionalPackages.MarshalBinary()
@@ -72,27 +72,22 @@ func (p PollProfileSupport) MarshalBinary() ([]byte, error) {
 
 func (p *PollProfileSupport) UnmarshalBinary(r io.Reader) error {
 	if err := binary.Read(r, binary.BigEndian, &p.PollProfileRevision); err != nil {
-		return fmt.Errorf("failed to read PollProfileRevision: %v", err)
+		return fmt.Errorf("failed to unmarshal PollProfileRevision: %v", err)
 	}
-
 	if err := binary.Read(r, binary.BigEndian, &p.MinPollPeriod); err != nil {
-		return fmt.Errorf("failed to read MinPollPeriod: %v", err)
+		return fmt.Errorf("failed to unmarshal MinPollPeriod: %v", err)
 	}
-
 	if err := binary.Read(r, binary.BigEndian, &p.MaxMtuRx); err != nil {
-		return fmt.Errorf("failed to read MaxMtuRx: %v", err)
+		return fmt.Errorf("failed to unmarshal MaxMtuRx: %v", err)
 	}
-
 	if err := binary.Read(r, binary.BigEndian, &p.MaxMtuTx); err != nil {
-		return fmt.Errorf("failed to read MaxMtuTx: %v", err)
+		return fmt.Errorf("failed to unmarshal MaxMtuTx: %v", err)
 	}
-
 	if err := binary.Read(r, binary.BigEndian, &p.MaxBwTx); err != nil {
-		return fmt.Errorf("failed to read MaxBwTx: %v", err)
+		return fmt.Errorf("failed to unmarshal MaxBwTx: %v", err)
 	}
-
 	if err := binary.Read(r, binary.BigEndian, &p.Options); err != nil {
-		return fmt.Errorf("failed to read Options: %v", err)
+		return fmt.Errorf("failed to unmarshal Options: %v", err)
 	}
 
 	p.OptionalPackages = &AttributeList{}

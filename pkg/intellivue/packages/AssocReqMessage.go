@@ -156,7 +156,7 @@ func (m *AssocReqMessage) MarshalBinary() ([]byte, error) {
 	// writeLIField(&buf, LIField(totalLength)) // Length - Заменяем на MarshalBinary
 	liFieldTotalLength, err := LIField(totalLength).MarshalBinary()
 	if err != nil {
-		return nil, fmt.Errorf("ошибка маршалинга LIField для общей длины: %w", err)
+		return nil, fmt.Errorf("failed to marshal LIField для общей длины: %w", err)
 	}
 	buf.Write(liFieldTotalLength)
 
@@ -167,7 +167,7 @@ func (m *AssocReqMessage) MarshalBinary() ([]byte, error) {
 	// writeLIField(&buf, LIField(pdataAPDULen)) // Length - Заменяем на MarshalBinary
 	liFieldPdataLen, err := LIField(presentationHeaderLen).MarshalBinary()
 	if err != nil {
-		return nil, fmt.Errorf("ошибка маршалинга LIField для длины P-DATA: %w", err)
+		return nil, fmt.Errorf("failed to marshal LIField для длины P-DATA: %w", err)
 	}
 	buf.Write(liFieldPdataLen)
 
@@ -184,19 +184,19 @@ func (m MDSEUserInfoStd) MarshalBinary() ([]byte, error) {
 	var buf bytes.Buffer
 
 	if err := binary.Write(&buf, binary.BigEndian, m.ProtocolVersion); err != nil {
-		return nil, fmt.Errorf("failed to write ProtocolVersion: %v", err)
+		return nil, fmt.Errorf("failed to marshal ProtocolVersion: %v", err)
 	}
 	if err := binary.Write(&buf, binary.BigEndian, m.NomenclatureVersion); err != nil {
-		return nil, fmt.Errorf("failed to write NomenclatureVersion: %v", err)
+		return nil, fmt.Errorf("failed to marshal NomenclatureVersion: %v", err)
 	}
 	if err := binary.Write(&buf, binary.BigEndian, m.FunctionalUnits); err != nil {
-		return nil, fmt.Errorf("failed to write FunctionalUnits: %v", err)
+		return nil, fmt.Errorf("failed to marshal FunctionalUnits: %v", err)
 	}
 	if err := binary.Write(&buf, binary.BigEndian, m.SystemType); err != nil {
-		return nil, fmt.Errorf("failed to write SystemType: %v", err)
+		return nil, fmt.Errorf("failed to marshal SystemType: %v", err)
 	}
 	if err := binary.Write(&buf, binary.BigEndian, m.StartupMode); err != nil {
-		return nil, fmt.Errorf("failed to write StartupMode: %v", err)
+		return nil, fmt.Errorf("failed to marshal StartupMode: %v", err)
 	}
 
 	optionListData, err := m.OptionList.MarshalBinary()

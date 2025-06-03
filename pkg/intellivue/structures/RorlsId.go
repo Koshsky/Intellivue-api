@@ -28,11 +28,10 @@ func (r *RorlsId) MarshalBinary() ([]byte, error) {
 	buf := new(bytes.Buffer)
 
 	if err := binary.Write(buf, binary.BigEndian, r.State); err != nil {
-		return nil, fmt.Errorf("ошибка записи State: %w", err)
+		return nil, fmt.Errorf("failed to marshal State: %w", err)
 	}
-
 	if err := binary.Write(buf, binary.BigEndian, r.Count); err != nil {
-		return nil, fmt.Errorf("ошибка записи Count: %w", err)
+		return nil, fmt.Errorf("failed to marshal Count: %w", err)
 	}
 
 	return buf.Bytes(), nil
@@ -40,11 +39,10 @@ func (r *RorlsId) MarshalBinary() ([]byte, error) {
 
 func (r *RorlsId) UnmarshalBinary(reader io.Reader) error {
 	if err := binary.Read(reader, binary.BigEndian, &r.State); err != nil {
-		return fmt.Errorf("ошибка чтения State: %w", err)
+		return fmt.Errorf("failed to unmarshal State: %w", err)
 	}
-
 	if err := binary.Read(reader, binary.BigEndian, &r.Count); err != nil {
-		return fmt.Errorf("ошибка чтения Count: %w", err)
+		return fmt.Errorf("failed to unmarshal Count: %w", err)
 	}
 
 	return nil

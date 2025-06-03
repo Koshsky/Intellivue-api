@@ -9,14 +9,13 @@ import (
 	"strings"
 )
 
-// Command Types
 const (
-	CMD_EVENT_REPORT           CMDType = 0x0000 // Event Report
-	CMD_CONFIRMED_EVENT_REPORT CMDType = 0x0001 // Confirmed Event Report
-	CMD_GET                    CMDType = 0x0003 // Get
-	CMD_SET                    CMDType = 0x0004 // Set
-	CMD_CONFIRMED_SET          CMDType = 0x0005 // Confirmed Set
-	CMD_CONFIRMED_ACTION       CMDType = 0x0007 // Confirmed Action
+	CMD_EVENT_REPORT           CMDType = 0x0000
+	CMD_CONFIRMED_EVENT_REPORT CMDType = 0x0001
+	CMD_GET                    CMDType = 0x0003
+	CMD_SET                    CMDType = 0x0004
+	CMD_CONFIRMED_SET          CMDType = 0x0005
+	CMD_CONFIRMED_ACTION       CMDType = 0x0007
 )
 
 type ActionResult struct {
@@ -34,18 +33,16 @@ func (a *ActionResult) MarshalBinary() ([]byte, error) {
 
 	managedObjectBytes, err := a.ManagedObject.MarshalBinary()
 	if err != nil {
-		return nil, fmt.Errorf("ошибка MarshalBinary для ManagedObject: %w", err)
+		return nil, fmt.Errorf("failed to marshal ManagedObject: %w", err)
 	}
 	if _, err := buf.Write(managedObjectBytes); err != nil {
-		return nil, fmt.Errorf("ошибка записи ManagedObject в буфер: %w", err)
+		return nil, fmt.Errorf("failed to marshal ManagedObject в буфер: %w", err)
 	}
-
 	if err := binary.Write(buf, binary.BigEndian, a.ActionType); err != nil {
-		return nil, fmt.Errorf("ошибка записи ActionType: %w", err)
+		return nil, fmt.Errorf("failed to marshal ActionType: %w", err)
 	}
-
 	if err := binary.Write(buf, binary.BigEndian, a.Length); err != nil {
-		return nil, fmt.Errorf("ошибка записи Length: %w", err)
+		return nil, fmt.Errorf("failed to marshal Length: %w", err)
 	}
 
 	return buf.Bytes(), nil
@@ -53,15 +50,13 @@ func (a *ActionResult) MarshalBinary() ([]byte, error) {
 
 func (a *ActionResult) UnmarshalBinary(reader io.Reader) error {
 	if err := a.ManagedObject.UnmarshalBinary(reader); err != nil {
-		return fmt.Errorf("ошибка UnmarshalBinary для ManagedObject: %w", err)
+		return fmt.Errorf("failed to unmarshal ManagedObject: %w", err)
 	}
-
 	if err := binary.Read(reader, binary.BigEndian, &a.ActionType); err != nil {
-		return fmt.Errorf("ошибка чтения ActionType: %w", err)
+		return fmt.Errorf("failed to unmarshal ActionType: %w", err)
 	}
-
 	if err := binary.Read(reader, binary.BigEndian, &a.Length); err != nil {
-		return fmt.Errorf("ошибка чтения Length: %w", err)
+		return fmt.Errorf("failed to unmarshal Length: %w", err)
 	}
 
 	return nil

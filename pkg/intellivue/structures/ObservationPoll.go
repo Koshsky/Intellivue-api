@@ -28,13 +28,13 @@ func (o *ObservationPoll) MarshalBinary() ([]byte, error) {
 	buf := new(bytes.Buffer)
 
 	if err := binary.Write(buf, binary.BigEndian, o.Handle); err != nil {
-		return nil, fmt.Errorf("ошибка записи Handle: %w", err)
+		return nil, fmt.Errorf("failed to marshal Handle: %w", err)
 	}
 
 	if o.Attributes != nil {
 		attributeData, err := o.Attributes.MarshalBinary()
 		if err != nil {
-			return nil, fmt.Errorf("ошибка маршалинга AttributeList: %w", err)
+			return nil, fmt.Errorf("failed to marshal AttributeList: %w", err)
 		}
 		buf.Write(attributeData)
 	} else {
@@ -46,12 +46,12 @@ func (o *ObservationPoll) MarshalBinary() ([]byte, error) {
 
 func (op *ObservationPoll) UnmarshalBinary(r io.Reader) error {
 	if err := binary.Read(r, binary.BigEndian, &op.Handle); err != nil {
-		return fmt.Errorf("ошибка чтения Handle в ObservationPoll: %w", err)
+		return fmt.Errorf("failed to unmarshal Handle: %w", err)
 	}
 
 	op.Attributes = &AttributeList{}
 	if err := op.Attributes.UnmarshalBinary(r); err != nil {
-		return fmt.Errorf("ошибка парсинга Attributes в ObservationPoll: %w", err)
+		return fmt.Errorf("failed to unmarshal Attributes: %w", err)
 	}
 
 	return nil

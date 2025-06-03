@@ -6,8 +6,9 @@ import (
 	"fmt"
 )
 
-// TODO: что это ебать? определи где используется и что это за структура!
-type MDIBObjSupport struct {
+// TODO: определить правильную структуру этого компонента(?)
+// почему "компонент" используется как "аттрибут" в AssocReq?
+type MdibObjectSupport struct {
 	parameter0  uint32
 	parameter1  uint32
 	parameter2  uint32
@@ -23,8 +24,8 @@ type MDIBObjSupport struct {
 	parameter12 uint32
 }
 
-func NewMDIBObjSupport() *MDIBObjSupport {
-	return &MDIBObjSupport{
+func NewMDIBObjSupport() *MdibObjectSupport {
+	return &MdibObjectSupport{
 		parameter0:  0x00060000,
 		parameter1:  0x00010021,
 		parameter2:  0x00000001,
@@ -41,52 +42,52 @@ func NewMDIBObjSupport() *MDIBObjSupport {
 	}
 }
 
-func (m MDIBObjSupport) MarshalBinary() ([]byte, error) {
+func (m MdibObjectSupport) MarshalBinary() ([]byte, error) {
 	var buf bytes.Buffer
 
 	if err := binary.Write(&buf, binary.BigEndian, m.parameter0); err != nil {
-		return nil, fmt.Errorf("failed to write parameter0: %v", err)
+		return nil, fmt.Errorf("failed to marshal parameter0: %v", err)
 	}
 	if err := binary.Write(&buf, binary.BigEndian, m.parameter1); err != nil {
-		return nil, fmt.Errorf("failed to write parameter1: %v", err)
+		return nil, fmt.Errorf("failed to marshal parameter1: %v", err)
 	}
 	if err := binary.Write(&buf, binary.BigEndian, m.parameter2); err != nil {
-		return nil, fmt.Errorf("failed to write parameter2: %v", err)
+		return nil, fmt.Errorf("failed to marshal parameter2: %v", err)
 	}
 	if err := binary.Write(&buf, binary.BigEndian, m.parameter3); err != nil {
-		return nil, fmt.Errorf("failed to write parameter3: %v", err)
+		return nil, fmt.Errorf("failed to marshal parameter3: %v", err)
 	}
 	if err := binary.Write(&buf, binary.BigEndian, m.parameter4); err != nil {
-		return nil, fmt.Errorf("failed to write parameter4: %v", err)
+		return nil, fmt.Errorf("failed to marshal parameter4: %v", err)
 	}
 	if err := binary.Write(&buf, binary.BigEndian, m.parameter5); err != nil {
-		return nil, fmt.Errorf("failed to write parameter5: %v", err)
+		return nil, fmt.Errorf("failed to marshal parameter5: %v", err)
 	}
 	if err := binary.Write(&buf, binary.BigEndian, m.parameter6); err != nil {
-		return nil, fmt.Errorf("failed to write parameter6: %v", err)
+		return nil, fmt.Errorf("failed to marshal parameter6: %v", err)
 	}
 	if err := binary.Write(&buf, binary.BigEndian, m.parameter7); err != nil {
-		return nil, fmt.Errorf("failed to write parameter7: %v", err)
+		return nil, fmt.Errorf("failed to marshal parameter7: %v", err)
 	}
 	if err := binary.Write(&buf, binary.BigEndian, m.parameter8); err != nil {
-		return nil, fmt.Errorf("failed to write parameter8: %v", err)
+		return nil, fmt.Errorf("failed to marshal parameter8: %v", err)
 	}
 	if err := binary.Write(&buf, binary.BigEndian, m.parameter9); err != nil {
-		return nil, fmt.Errorf("failed to write parameter9: %v", err)
+		return nil, fmt.Errorf("failed to marshal parameter9: %v", err)
 	}
 	if err := binary.Write(&buf, binary.BigEndian, m.parameter10); err != nil {
-		return nil, fmt.Errorf("failed to write parameter10: %v", err)
+		return nil, fmt.Errorf("failed to marshal parameter10: %v", err)
 	}
 	if err := binary.Write(&buf, binary.BigEndian, m.parameter11); err != nil {
-		return nil, fmt.Errorf("failed to write parameter11: %v", err)
+		return nil, fmt.Errorf("failed to marshal parameter11: %v", err)
 	}
 	if err := binary.Write(&buf, binary.BigEndian, m.parameter12); err != nil {
-		return nil, fmt.Errorf("failed to write parameter12: %v", err)
+		return nil, fmt.Errorf("failed to marshal parameter12: %v", err)
 	}
 
 	return buf.Bytes(), nil
 }
 
-func (m MDIBObjSupport) Size() uint16 {
+func (m MdibObjectSupport) Size() uint16 {
 	return 52
 }

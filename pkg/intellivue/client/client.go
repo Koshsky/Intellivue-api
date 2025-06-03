@@ -184,7 +184,7 @@ func (c *ComputerClient) runPacketListener() {
 	for {
 		n, _, err := conn.ReadFromUDP(buffer)
 		if err != nil {
-			c.SafeLog("runPacketListener: Ошибка чтения UDP: %v", err)
+			c.SafeLog("runPacketListener: failed to unmarshal UDP: %v", err)
 			return
 		}
 		if n == 0 {
