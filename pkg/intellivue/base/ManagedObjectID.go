@@ -1,4 +1,4 @@
-package structures
+package base
 
 import (
 	"bytes"
@@ -10,8 +10,8 @@ import (
 )
 
 type ManagedObjectId struct {
-	MObjClass OIDType
-	MObjInst  GlbHandle
+	MObjClass OIDType   `json:"mobj_class"`
+	MObjInst  GlbHandle `json:"mobj_inst"`
 }
 
 func (m *ManagedObjectId) Size() uint16 {
@@ -48,5 +48,5 @@ func (m *ManagedObjectId) UnmarshalBinary(reader io.Reader) error {
 func (m *ManagedObjectId) ShowInfo(indentationLevel int) {
 	indent := strings.Repeat("  ", indentationLevel)
 	log.Printf("%s<ManagedObjectId>", indent)
-	log.Printf("%s  MObjClass: 0x%X", indent, m.MObjClass)
+	log.Printf("%s  MObjClass: %#04x", indent, m.MObjClass)
 }

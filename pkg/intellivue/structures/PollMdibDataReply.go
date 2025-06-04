@@ -7,15 +7,18 @@ import (
 	"io"
 	"log"
 	"strings"
+
+	"github.com/Koshsky/Intellivue-api/pkg/intellivue/base"
+	"github.com/Koshsky/Intellivue-api/pkg/intellivue/structures/attributes"
 )
 
 type PollMdibDataReply struct {
-	PollNumber    uint16
-	RelTimeStamp  RelativeTime
-	AbsTimeStamp  AbsoluteTime
-	PolledObjType TYPE
-	PolledAttrGrp OIDType
-	PollInfoList  *PollInfoList
+	PollNumber    uint16            `json:"poll_number"`
+	RelTimeStamp  base.RelativeTime `json:"rel_time_stamp"`
+	AbsTimeStamp  AbsoluteTime      `json:"abs_time_stamp"`
+	PolledObjType attributes.TYPE   `json:"polled_obj_type"`
+	PolledAttrGrp base.OIDType      `json:"polled_attr_grp"`
+	PollInfoList  *PollInfoList     `json:"poll_info_list"`
 }
 
 func (p *PollMdibDataReply) Size() uint16 {

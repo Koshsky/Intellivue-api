@@ -5,51 +5,53 @@ import (
 	"fmt"
 	"io"
 
-	. "github.com/Koshsky/Intellivue-api/pkg/intellivue/structures"
+	"github.com/Koshsky/Intellivue-api/pkg/intellivue/base"
+	"github.com/Koshsky/Intellivue-api/pkg/intellivue/structures"
+	"github.com/Koshsky/Intellivue-api/pkg/intellivue/structures/attributes"
 )
 
 // This message can be sent as soon as the logical connection is established and the MDS Create Event/
 // Reply message sequence is finished. The message calls a method that returns monitor device data in a
 // single response message.
 type SinglePollDataRequest struct {
-	SPpdu
-	ROapdus
-	ROIVapdu
-	ActionArgument
-	PollMdibDataReq
+	structures.SPpdu
+	structures.ROapdus
+	structures.ROIVapdu
+	structures.ActionArgument
+	structures.PollMdibDataReq
 }
 
 func (s *SinglePollDataRequest) Size() uint16 {
 	return s.SPpdu.Size() + s.ROapdus.Size() + s.ROIVapdu.Size() + s.ActionArgument.Size() + s.PollMdibDataReq.Size()
 }
 
-func NewSinglePollDataRequest(invoke_id uint16, code OIDType) *SinglePollDataRequest {
-	sp := SPpdu{
+func NewSinglePollDataRequest(invoke_id uint16, code base.OIDType) *SinglePollDataRequest {
+	sp := structures.SPpdu{
 		SessionID:  0xE100,
 		PContextID: 2,
 	}
-	roap := ROapdus{
-		ROType: ROIV_APDU,
+	roap := structures.ROapdus{
+		ROType: base.ROIV_APDU,
 	}
-	roiv := ROIVapdu{
+	roiv := structures.ROIVapdu{
 		InvokeID:    invoke_id,
-		CommandType: CMD_CONFIRMED_ACTION,
+		CommandType: base.CMD_CONFIRMED_ACTION,
 	}
-	actionArg := ActionArgument{
-		ManagedObject: ManagedObjectId{
-			MObjClass: NOM_MOC_VMS_MDS,
-			MObjInst: GlbHandle{
+	actionArg := structures.ActionArgument{
+		ManagedObject: base.ManagedObjectId{
+			MObjClass: base.NOM_MOC_VMS_MDS,
+			MObjInst: base.GlbHandle{
 				ContextID: 0,
 				Handle:    0,
 			},
 		},
 		Scope:      0,
-		ActionType: NOM_ACT_POLL_MDIB_DATA,
+		ActionType: base.NOM_ACT_POLL_MDIB_DATA,
 	}
-	pollReq := PollMdibDataReq{
+	pollReq := structures.PollMdibDataReq{
 		PollNumber: 1,
-		PolledObjType: TYPE{
-			Partition: NOM_PART_OBJ,
+		PolledObjType: attributes.TYPE{
+			Partition: base.NOM_PART_OBJ,
 			Code:      code,
 		},
 		PolledAttrGrp: 0,

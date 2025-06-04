@@ -5,13 +5,15 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+
+	"github.com/Koshsky/Intellivue-api/pkg/intellivue/base"
 )
 
 // Remote Operation Invoke
 type ROIVapdu struct {
-	InvokeID    uint16  // identifies the transaction
-	CommandType CMDType // identifies type of command
-	Length      uint16  // no. of bytes in rest of message
+	InvokeID    uint16       `json:"invoke_id"`
+	CommandType base.CMDType `json:"command_type"`
+	Length      uint16       `json:"length"`
 }
 
 func (r *ROIVapdu) Size() uint16 {

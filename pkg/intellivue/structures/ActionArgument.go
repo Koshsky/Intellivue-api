@@ -5,18 +5,15 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
-)
 
-const (
-	NOM_ACT_POLL_MDIB_DATA     OIDType = 0x0c16
-	NOM_ACT_POLL_MDIB_DATA_EXT OIDType = 0xf13b
+	"github.com/Koshsky/Intellivue-api/pkg/intellivue/base"
 )
 
 type ActionArgument struct {
-	ManagedObject ManagedObjectId
-	Scope         uint32  //fixed value 0
-	ActionType    OIDType // identification of method
-	Length        uint16
+	ManagedObject base.ManagedObjectId `json:"managed_object"`
+	Scope         uint32               `json:"scope"`
+	ActionType    base.OIDType         `json:"action_type"`
+	Length        uint16               `json:"length"`
 }
 
 func (a *ActionArgument) Size() uint16 {

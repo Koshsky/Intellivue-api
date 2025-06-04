@@ -5,16 +5,15 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+
+	"github.com/Koshsky/Intellivue-api/pkg/intellivue/base"
 )
 
-// The Event Report Result command is used as a response message to the Event Report message. It is
-// appended to the Operation Result message with the command_type
-// CMD_CONFIRMED_EVENT_REPORT.
 type EventReportResult struct {
-	ManagedObject ManagedObjectId // mirrored from EvRep
-	CurrentTime   RelativeTime    // result time stamp
-	EventType     OIDType         // identification of event
-	Length        uint16          // size of appended data
+	ManagedObject base.ManagedObjectId `json:"managed_object"`
+	CurrentTime   base.RelativeTime    `json:"current_time"`
+	EventType     base.OIDType         `json:"event_type"`
+	Length        uint16               `json:"length"`
 }
 
 func (e *EventReportResult) Size() uint16 {

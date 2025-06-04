@@ -1,10 +1,12 @@
-package structures
+package attributes
 
 import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
 	"io"
+
+	"github.com/Koshsky/Intellivue-api/pkg/intellivue/base"
 )
 
 type PollProfileExtOptions uint32
@@ -20,11 +22,10 @@ const (
 	POLL_EXT_DYN_MODALITIES       PollProfileExtOptions = 0x01000000 // send timestamps for numerics with dynamic modalities
 )
 
-// The Poll Profile Extensions attribute specifies
-// some extensions for the standard polling profile.
+// Attribute: Poll Profile Extensions
 type PollProfileExt struct {
 	Options PollProfileExtOptions
-	ExtAttr *AttributeList // reserved for future extensions
+	ExtAttr *AttributeList // TODO: определить/импортировать AttributeList
 }
 
 func (o PollProfileExt) Size() uint16 {
@@ -58,7 +59,7 @@ func (o PollProfileExt) UnmarshalBinary(r io.Reader) error {
 		return fmt.Errorf("failed to unmarshal Options: %v", err)
 	}
 
-	o.ExtAttr = &AttributeList{}
+	o.ExtAttr = &AttributeList{} // TODO: определить/импортировать AttributeList
 	if err := o.ExtAttr.UnmarshalBinary(r); err != nil {
 		return fmt.Errorf("failed to unmarshal ExtAttr: %v", err)
 	}
@@ -66,18 +67,19 @@ func (o PollProfileExt) UnmarshalBinary(r io.Reader) error {
 	return nil
 }
 
-// Helper function for creating the PollProfileExt AVAType
-// TODO: ????? должна ли эта фунцкция располагаться ЗДЕСЬ?
 func NewPollProfileExtensionAVAType() AVAType {
+	ext := &PollProfileExt{
+		Options: POLL_EXT_PERIOD_NU_1SEC |
+			POLL_EXT_PERIOD_RTSA |
+			POLL_EXT_ENUM |
+			POLL_EXT_NU_PRIO_LIST |
+			POLL_EXT_DYN_MODALITIES,
+		ExtAttr: &AttributeList{},
+	}
+	data, _ := ext.MarshalBinary()
+	hb := HexBytes(data)
 	return AVAType{
-		AttributeID: NOM_ATTR_POLL_PROFILE_EXT,
-		Value: &PollProfileExt{
-			Options: POLL_EXT_PERIOD_NU_1SEC |
-				POLL_EXT_PERIOD_RTSA |
-				POLL_EXT_ENUM |
-				POLL_EXT_NU_PRIO_LIST |
-				POLL_EXT_DYN_MODALITIES,
-			ExtAttr: &AttributeList{},
-		},
+		AttributeID: base.NOM_ATTR_POLL_PROFILE_EXT,
+		Value:       &hb,
 	}
 }

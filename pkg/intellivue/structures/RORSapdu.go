@@ -7,13 +7,15 @@ import (
 	"io"
 	"log"
 	"strings"
+
+	"github.com/Koshsky/Intellivue-api/pkg/intellivue/base"
 )
 
 // Remote Operation Result
 type RORSapdu struct {
-	InvokeID    uint16  // mirrored back from op. invoke
-	CommandType CMDType // identifies type of command
-	Length      uint16  // no of bytes in rest of message
+	InvokeID    uint16       `json:"invoke_id"`
+	CommandType base.CMDType `json:"command_type"`
+	Length      uint16       `json:"length"`
 }
 
 func (r RORSapdu) Size() uint16 {

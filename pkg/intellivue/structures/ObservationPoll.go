@@ -7,11 +7,14 @@ import (
 	"io"
 	"log"
 	"strings"
+
+	"github.com/Koshsky/Intellivue-api/pkg/intellivue/base"
+	"github.com/Koshsky/Intellivue-api/pkg/intellivue/structures/attributes"
 )
 
 type ObservationPoll struct {
-	Handle     Handle
-	Attributes *AttributeList
+	Handle     base.Handle               `json:"handle"`
+	Attributes *attributes.AttributeList `json:"attributes"`
 }
 
 func (o *ObservationPoll) Size() uint16 {
@@ -49,7 +52,7 @@ func (op *ObservationPoll) UnmarshalBinary(r io.Reader) error {
 		return fmt.Errorf("failed to unmarshal Handle: %w", err)
 	}
 
-	op.Attributes = &AttributeList{}
+	op.Attributes = &attributes.AttributeList{}
 	if err := op.Attributes.UnmarshalBinary(r); err != nil {
 		return fmt.Errorf("failed to unmarshal Attributes: %w", err)
 	}

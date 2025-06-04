@@ -11,8 +11,8 @@ import (
 
 // Remote Operation Header
 type ROapdus struct {
-	ROType uint16 // ID for operation
-	Length uint16 // bytes to follow
+	ROType uint16 `json:"ro_type"`
+	Length uint16 `json:"length"`
 }
 
 func (r *ROapdus) Size() uint16 {

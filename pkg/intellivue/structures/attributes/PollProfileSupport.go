@@ -1,31 +1,22 @@
-package structures
+package attributes
 
 import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
 	"io"
+
+	"github.com/Koshsky/Intellivue-api/pkg/intellivue/base"
 )
 
-type PollProfileRevision uint32
-type PollProfileOptions uint32
-
-const (
-	POLL_PROFILE_REV_0 PollProfileRevision = 0x80000000
-
-	P_OPT_DYN_CREATE_OBJECTS PollProfileOptions = 0x40000000
-	P_OPT_DYN_DELETE_OBJECTS PollProfileOptions = 0x20000000
-)
-
-// The Poll Profile Support attribute contains the specification
-// of the polling profile supported by the system.
+// Attribute: Poll Profile Support
 type PollProfileSupport struct {
-	PollProfileRevision PollProfileRevision
-	MinPollPeriod       RelativeTime
+	PollProfileRevision base.PollProfileRevision
+	MinPollPeriod       base.RelativeTime
 	MaxMtuRx            uint32
 	MaxMtuTx            uint32
 	MaxBwTx             uint32
-	Options             PollProfileOptions
+	Options             base.PollProfileOptions
 	OptionalPackages    *AttributeList
 }
 

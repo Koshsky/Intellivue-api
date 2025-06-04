@@ -10,46 +10,36 @@ import (
 )
 
 type PollInfoList struct {
-	Value []SingleContextPoll
+	Count  uint16              `json:"count"`
+	Length uint16              `json:"length"`
+	Value  []SingleContextPoll `json:"value"`
 }
 
 func (p *PollInfoList) Size() uint16 {
-	return 4 + p.Length()
-}
-
-func (p *PollInfoList) Count() uint16 {
-	if p == nil {
-		return 0
-	}
-	return uint16(len(p.Value))
-}
-
-func (p *PollInfoList) Length() uint16 {
-	if p == nil || len(p.Value) == 0 {
-		return 0
-	}
-
-	var total uint16
-	for _, op := range p.Value {
-		total += op.Size()
-	}
-	return total
+	return 4 + p.Length
 }
 
 func (p *PollInfoList) MarshalBinary() ([]byte, error) {
+	p.Count = uint16(len(p.Value))
+	total := uint16(0)
+	for _, poll := range p.Value {
+		total += poll.Size()
+	}
+	p.Length = total
+
 	buf := new(bytes.Buffer)
 
-	if err := binary.Write(buf, binary.BigEndian, p.Count()); err != nil {
+	if err := binary.Write(buf, binary.BigEndian, p.Count); err != nil {
 		return nil, fmt.Errorf("failed to marshal Count: %w", err)
 	}
-	if err := binary.Write(buf, binary.BigEndian, p.Length()); err != nil {
+	if err := binary.Write(buf, binary.BigEndian, p.Length); err != nil {
 		return nil, fmt.Errorf("failed to marshal Length: %w", err)
 	}
 
-	for i, poll := range p.Value {
+	for _, poll := range p.Value {
 		pollData, err := poll.MarshalBinary()
 		if err != nil {
-			return nil, fmt.Errorf("failed to marshal SingleContextPoll %d: %w", i, err)
+			return nil, fmt.Errorf("failed to marshal SingleContextPoll: %w", err)
 		}
 		buf.Write(pollData)
 	}
@@ -58,17 +48,15 @@ func (p *PollInfoList) MarshalBinary() ([]byte, error) {
 }
 
 func (p *PollInfoList) UnmarshalBinary(r io.Reader) error {
-	var pollCount uint16
-	if err := binary.Read(r, binary.BigEndian, &pollCount); err != nil {
+	if err := binary.Read(r, binary.BigEndian, &p.Count); err != nil {
 		return fmt.Errorf("failed to unmarshal Count: %w", err)
 	}
-	var pollDataLength uint16
-	if err := binary.Read(r, binary.BigEndian, &pollDataLength); err != nil {
+	if err := binary.Read(r, binary.BigEndian, &p.Length); err != nil {
 		return fmt.Errorf("failed to unmarshal Length: %w", err)
 	}
 
-	p.Value = make([]SingleContextPoll, pollCount)
-	for i := uint16(0); i < pollCount; i++ {
+	p.Value = make([]SingleContextPoll, p.Count)
+	for i := uint16(0); i < p.Count; i++ {
 		if err := p.Value[i].UnmarshalBinary(r); err != nil {
 			return fmt.Errorf("failed to unmarshal SingleContextPoll[%d]: %w", i, err)
 		}
@@ -82,8 +70,8 @@ func (p *PollInfoList) ShowInfo(indentationLevel int) {
 
 	log.Printf("%s<PollInfoList>", indent)
 	log.Printf("%s  Value:", indent)
-	log.Printf("%s  Count: %d", indent, p.Count())
-	log.Printf("%s  Length: %d", indent, p.Length())
+	log.Printf("%s  Count: %d", indent, p.Count)
+	log.Printf("%s  Length: %d", indent, p.Length)
 
 	for _, poll := range p.Value {
 		poll.ShowInfo(indentationLevel + 1)

@@ -11,8 +11,8 @@ import (
 
 // Session/Presentation Header
 type SPpdu struct {
-	SessionID  uint16 // TODO: contains a fixed value 0xE100
-	PContextID uint16 // negotiated in association phase
+	SessionID  uint16 `json:"session_id"`
+	PContextID uint16 `json:"p_context_id"`
 }
 
 func (s *SPpdu) Size() uint16 {

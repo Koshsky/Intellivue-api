@@ -1,4 +1,4 @@
-package structures
+package base
 
 import (
 	"bytes"
@@ -10,8 +10,8 @@ import (
 )
 
 type GlbHandle struct {
-	ContextID MdsContext
-	Handle    Handle
+	ContextID MdsContext `json:"context_id"`
+	Handle    Handle     `json:"handle"`
 }
 
 func (g *GlbHandle) Size() uint16 {

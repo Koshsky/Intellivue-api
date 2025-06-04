@@ -16,8 +16,8 @@ const (
 )
 
 type RorlsId struct {
-	State uint8
-	Count uint8 // counter starts with 1
+	State uint8 `json:"state"`
+	Count uint8 `json:"count"`
 }
 
 func (r *RorlsId) Size() uint16 {

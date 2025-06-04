@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/Koshsky/Intellivue-api/pkg/intellivue/base"
 	. "github.com/Koshsky/Intellivue-api/pkg/intellivue/structures"
 )
 
@@ -74,26 +75,26 @@ func NewMDSCreateResult() *MDSCreateResult {
 	}
 
 	roap := ROapdus{
-		ROType: RORS_APDU,
+		ROType: base.RORS_APDU,
 		Length: 0x0014,
 	}
 
 	roiv := RORSapdu{
 		InvokeID:    1,
-		CommandType: CMD_CONFIRMED_EVENT_REPORT,
+		CommandType: base.CMD_CONFIRMED_EVENT_REPORT,
 		Length:      0x000e,
 	}
 
 	eventReport := EventReportResult{
-		ManagedObject: ManagedObjectId{
-			MObjClass: NOM_MOC_VMS_MDS,
-			MObjInst: GlbHandle{
+		ManagedObject: base.ManagedObjectId{
+			MObjClass: base.NOM_MOC_VMS_MDS,
+			MObjInst: base.GlbHandle{
 				ContextID: 0,
 				Handle:    0,
 			},
 		},
 		CurrentTime: 0x0000,
-		EventType:   NOM_NOTI_MDS_CREAT,
+		EventType:   base.NOM_NOTI_MDS_CREAT,
 		Length:      0x0000,
 	}
 

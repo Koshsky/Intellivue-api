@@ -14,11 +14,11 @@ import (
 // The Single Poll Data Result message contains a PollInfoList which is of variable length. The length
 // fields in the message depend on the length of the PollInfoList.
 type SinglePollDataResult struct {
-	SPpdu
-	ROapdus
-	RORSapdu
-	ActionResult
-	PollMdibDataReply
+	SPpdu             `json:"sppdu"`
+	ROapdus           `json:"ro_apdus"`
+	RORSapdu          `json:"rors_apdu"`
+	ActionResult      `json:"action_result"`
+	PollMdibDataReply `json:"poll_mdib_data_reply"`
 }
 
 func (m *SinglePollDataResult) Size() uint16 {

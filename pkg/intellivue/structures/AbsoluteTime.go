@@ -10,14 +10,14 @@ import (
 )
 
 type AbsoluteTime struct {
-	Century      uint8
-	Year         uint8
-	Month        uint8
-	Day          uint8
-	Hour         uint8
-	Minute       uint8
-	Second       uint8
-	SecFractions uint8
+	Century      uint8 `json:"century"`
+	Year         uint8 `json:"year"`
+	Month        uint8 `json:"month"`
+	Day          uint8 `json:"day"`
+	Hour         uint8 `json:"hour"`
+	Minute       uint8 `json:"minute"`
+	Second       uint8 `json:"second"`
+	SecFractions uint8 `json:"sec_fractions"`
 }
 
 func (a *AbsoluteTime) MarshalBinary() ([]byte, error) {

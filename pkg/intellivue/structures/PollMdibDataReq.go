@@ -5,12 +5,15 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+
+	"github.com/Koshsky/Intellivue-api/pkg/intellivue/base"
+	"github.com/Koshsky/Intellivue-api/pkg/intellivue/structures/attributes"
 )
 
 type PollMdibDataReq struct {
-	PollNumber    uint16 // recommended to use this field as a counter
-	PolledObjType TYPE   // Numerics / Alarms / MDS / Patient Demographics
-	PolledAttrGrp OIDType
+	PollNumber    uint16          // recommended to use this field as a counter
+	PolledObjType attributes.TYPE // Numerics / Alarms / MDS / Patient Demographics
+	PolledAttrGrp base.OIDType
 }
 
 func (p *PollMdibDataReq) Size() uint16 {

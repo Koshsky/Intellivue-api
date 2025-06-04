@@ -7,13 +7,15 @@ import (
 	"io"
 	"log"
 	"strings"
+
+	"github.com/Koshsky/Intellivue-api/pkg/intellivue/base"
 )
 
 type ROLRSapdu struct {
-	LinkedID    RorlsId
-	InvokeID    uint16
-	CommandType CMDType
-	Length      uint16
+	LinkedID    RorlsId      `json:"linked_id"`
+	InvokeID    uint16       `json:"invoke_id"`
+	CommandType base.CMDType `json:"command_type"`
+	Length      uint16       `json:"length"`
 }
 
 func (r *ROLRSapdu) Size() uint16 {

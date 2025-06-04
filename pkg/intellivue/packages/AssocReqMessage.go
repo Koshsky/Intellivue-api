@@ -5,7 +5,8 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	. "github.com/Koshsky/Intellivue-api/pkg/intellivue/structures"
+	"github.com/Koshsky/Intellivue-api/pkg/intellivue/base"
+	"github.com/Koshsky/Intellivue-api/pkg/intellivue/structures/attributes"
 )
 
 type SessionHeader struct {
@@ -24,7 +25,7 @@ type AssocReqPresentationHeader struct {
 }
 
 type AssocReqUserData struct {
-	Length   ASNLength
+	Length   base.ASNLength
 	UserData MDSEUserInfoStd
 }
 
@@ -34,8 +35,8 @@ type MDSEUserInfoStd struct {
 	FunctionalUnits     uint32
 	SystemType          uint32
 	StartupMode         uint32
-	OptionList          *AttributeList
-	SupportedAprofiles  *AttributeList
+	OptionList          *attributes.AttributeList
+	SupportedAprofiles  *attributes.AttributeList
 }
 
 type AssocReqMessage struct {
@@ -60,47 +61,51 @@ func NewAssocReqMessage() *AssocReqMessage {
 	}
 	trailerData := []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
 
-	supportedAprofiles := &AttributeList{}
+	supportedAprofiles := &attributes.AttributeList{}
 
-	pollProfileExt := &PollProfileSupport{
-		PollProfileRevision: POLL_PROFILE_REV_0,
+	pollProfileExt := &attributes.PollProfileSupport{
+		PollProfileRevision: base.POLL_PROFILE_REV_0,
 		MinPollPeriod:       0x00000fa0, // 4000 ms (4 seconds)
 		MaxMtuRx:            0x000005b0, // 1456 bytes
 		MaxMtuTx:            0x000005b0, // 1456 bytes
 		MaxBwTx:             0xFFFFFFFF, // Unlimited bandwidth
-		Options: P_OPT_DYN_CREATE_OBJECTS |
-			P_OPT_DYN_DELETE_OBJECTS,
-		OptionalPackages: &AttributeList{
-			Value: []AVAType{
-				NewPollProfileExtensionAVAType(),
+		Options: base.P_OPT_DYN_CREATE_OBJECTS |
+			base.P_OPT_DYN_DELETE_OBJECTS,
+		OptionalPackages: &attributes.AttributeList{
+			Value: []attributes.AVAType{
+				attributes.NewPollProfileExtensionAVAType(),
 			},
 		},
 	}
 
-	mdibObjSupport := NewMDIBObjSupport()
+	mdibObjSupport := attributes.NewMDIBObjSupport()
 
+	dataPollProfileExt, _ := pollProfileExt.MarshalBinary()
+	hbPollProfileExt := attributes.HexBytes(dataPollProfileExt)
 	supportedAprofiles.Value = append(
 		supportedAprofiles.Value,
-		AVAType{
-			AttributeID: NOM_POLL_PROFILE_SUPPORT,
-			Value:       pollProfileExt,
+		attributes.AVAType{
+			AttributeID: base.NOM_POLL_PROFILE_SUPPORT,
+			Value:       &hbPollProfileExt,
 		},
 	)
+	dataMdibObjSupport, _ := mdibObjSupport.MarshalBinary()
+	hbMdibObjSupport := attributes.HexBytes(dataMdibObjSupport)
 	supportedAprofiles.Value = append(
 		supportedAprofiles.Value,
-		AVAType{
-			AttributeID: NOM_MDIB_OBJ_SUPPORT,
-			Value:       mdibObjSupport,
+		attributes.AVAType{
+			AttributeID: base.NOM_MDIB_OBJ_SUPPORT,
+			Value:       &hbMdibObjSupport,
 		},
 	)
 
 	userData := &MDSEUserInfoStd{
-		ProtocolVersion:     MDDL_VERSION1,
-		NomenclatureVersion: NOMEN_VERSION,
+		ProtocolVersion:     base.MDDL_VERSION1,
+		NomenclatureVersion: base.NOMEN_VERSION,
 		FunctionalUnits:     0,
-		SystemType:          SYST_CLIENT,
-		StartupMode:         HOT_START,
-		OptionList:          &AttributeList{},
+		SystemType:          base.SYST_CLIENT,
+		StartupMode:         base.HOT_START,
+		OptionList:          &attributes.AttributeList{},
 		SupportedAprofiles:  supportedAprofiles,
 	}
 
@@ -126,7 +131,7 @@ func NewAssocReqMessage() *AssocReqMessage {
 			Data:   presentationData,
 		},
 		UserData: AssocReqUserData{
-			Length:   ASNLength(len(userDataBytes)),
+			Length:   base.ASNLength(len(userDataBytes)),
 			UserData: *userData,
 		},
 		PresentationTrailer: trailerData,
@@ -154,7 +159,7 @@ func (m *AssocReqMessage) MarshalBinary() ([]byte, error) {
 	buf.WriteByte(m.SessionHeader.Type)
 
 	// writeLIField(&buf, LIField(totalLength)) // Length - Заменяем на MarshalBinary
-	liFieldTotalLength, err := LIField(totalLength).MarshalBinary()
+	liFieldTotalLength, err := base.LIField(totalLength).MarshalBinary()
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal LIField для общей длины: %w", err)
 	}
@@ -165,7 +170,7 @@ func (m *AssocReqMessage) MarshalBinary() ([]byte, error) {
 	buf.WriteByte(m.PresentationHeader.Prefix)
 
 	// writeLIField(&buf, LIField(pdataAPDULen)) // Length - Заменяем на MarshalBinary
-	liFieldPdataLen, err := LIField(presentationHeaderLen).MarshalBinary()
+	liFieldPdataLen, err := base.LIField(presentationHeaderLen).MarshalBinary()
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal LIField для длины P-DATA: %w", err)
 	}

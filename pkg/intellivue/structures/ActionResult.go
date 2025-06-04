@@ -7,21 +7,14 @@ import (
 	"io"
 	"log"
 	"strings"
-)
 
-const (
-	CMD_EVENT_REPORT           CMDType = 0x0000
-	CMD_CONFIRMED_EVENT_REPORT CMDType = 0x0001
-	CMD_GET                    CMDType = 0x0003
-	CMD_SET                    CMDType = 0x0004
-	CMD_CONFIRMED_SET          CMDType = 0x0005
-	CMD_CONFIRMED_ACTION       CMDType = 0x0007
+	"github.com/Koshsky/Intellivue-api/pkg/intellivue/base"
 )
 
 type ActionResult struct {
-	ManagedObject ManagedObjectId
-	ActionType    OIDType
-	Length        uint16
+	ManagedObject base.ManagedObjectId `json:"managed_object"`
+	ActionType    base.OIDType         `json:"action_type"`
+	Length        uint16               `json:"length"`
 }
 
 func (a *ActionResult) Size() uint16 {

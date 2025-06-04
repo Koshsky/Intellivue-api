@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	"github.com/Koshsky/Intellivue-api/pkg/intellivue/structures"
+	"github.com/Koshsky/Intellivue-api/pkg/intellivue/base"
 	"github.com/Koshsky/Intellivue-api/pkg/intellivue/utils"
 )
 
@@ -37,33 +37,33 @@ func (c *ComputerClient) handleROIVAPDU(data []byte) error {
 		return fmt.Errorf("недостаточно данных для определения command_type в пакете ROIV_APDU")
 	}
 
-	commandType := structures.CMDType(binary.BigEndian.Uint16(data[6:8]))
+	commandType := base.CMDType(binary.BigEndian.Uint16(data[6:8]))
 
-	c.SafeLog(fmt.Sprintf("Получен пакет ROIV_APDU, command_type: 0x%04X", commandType))
+	c.SafeLog("Получен пакет ROIV_APDU, command_type: 0x%04X", commandType)
 
 	switch commandType {
-	case structures.CMD_CONFIRMED_EVENT_REPORT:
+	case base.CMD_CONFIRMED_EVENT_REPORT:
 		c.SafeLog("\n\nОбнаружен CommandType: CMD_CONFIRMED_EVENT_REPORT")
 		// TODO: Парсинг и обработка CMD_CONFIRMED_EVENT_REPORT
 
-	case structures.CMD_EVENT_REPORT:
+	case base.CMD_EVENT_REPORT:
 		c.SafeLog("\n\nОбнаружен CommandType: CMD_EVENT_REPORT")
 		// TODO: Парсинг и обработка CMD_EVENT_REPORT
 
-	case structures.CMD_CONFIRMED_ACTION:
+	case base.CMD_CONFIRMED_ACTION:
 		c.SafeLog("\n\nОбнаружен CommandType: CMD_CONFIRMED_ACTION")
 		// TODO: Парсинг и обработка CMD_CONFIRMED_ACTION
 
-	case structures.CMD_GET:
+	case base.CMD_GET:
 		c.SafeLog("\n\nОбнаружен CommandType: CMD_GET")
 		// TODO: парсинг и обработка CMD_GET
 
-	case structures.CMD_CONFIRMED_SET:
+	case base.CMD_CONFIRMED_SET:
 		c.SafeLog("\n\nОбнаружен CommandType: CMD_CONFIRMED_SET")
 		// TODO: Парсинг и обработка CMD_CONFIRMED_SET
 
 	default:
-		c.SafeLog(fmt.Sprintf("  Неизвестный command_type в ROIV_APDU: 0x%04X. Игнорируем.", commandType))
+		c.SafeLog("  Неизвестный command_type в ROIV_APDU: 0x%04X. Игнорируем.", commandType)
 	}
 
 	utils.PrintHexDump(&c.printMu, "ROIV_APDU", data)

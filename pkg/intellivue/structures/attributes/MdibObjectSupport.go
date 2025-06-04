@@ -1,4 +1,4 @@
-package structures
+package attributes
 
 import (
 	"bytes"
@@ -6,8 +6,7 @@ import (
 	"fmt"
 )
 
-// TODO: определить правильную структуру этого компонента(?)
-// почему "компонент" используется как "аттрибут" в AssocReq?
+// supported components ( Attribute: System Specification)
 type MdibObjectSupport struct {
 	parameter0  uint32
 	parameter1  uint32

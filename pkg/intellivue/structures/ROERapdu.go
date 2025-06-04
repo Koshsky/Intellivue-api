@@ -21,8 +21,8 @@ const (
 )
 
 type ROERapdu struct {
-	InvokeID uint16
-	Length   uint16
+	InvokeID uint16 `json:"invoke_id"`
+	Length   uint16 `json:"length"`
 }
 
 func (r *ROERapdu) Size() uint16 {

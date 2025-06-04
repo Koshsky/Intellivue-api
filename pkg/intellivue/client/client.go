@@ -4,13 +4,15 @@ import (
 	"bytes"
 	"context"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net"
 	"sync"
+	"time"
 
+	"github.com/Koshsky/Intellivue-api/pkg/intellivue/base"
 	"github.com/Koshsky/Intellivue-api/pkg/intellivue/packages"
-	. "github.com/Koshsky/Intellivue-api/pkg/intellivue/structures"
 	"github.com/Koshsky/Intellivue-api/pkg/intellivue/utils"
 )
 
@@ -43,16 +45,19 @@ type ComputerClient struct {
 	isAssociationDone bool // Флаг для отслеживания состояния ассоциации
 
 	closeOnce sync.Once
+
+	assocResponseChan chan struct{}
 }
 
 func NewComputerClient(addr, port string) *ComputerClient {
 	ctx, cancel := context.WithCancel(context.Background())
 	client := &ComputerClient{
-		serverAddr: addr,
-		serverPort: port,
-		ctx:        ctx,
-		cancel:     cancel,
-		sendChan:   make(chan []byte, 10), // если используется
+		serverAddr:        addr,
+		serverPort:        port,
+		ctx:               ctx,
+		cancel:            cancel,
+		sendChan:          make(chan []byte, 10), // если используется
+		assocResponseChan: make(chan struct{}),
 	}
 	client.wg.Add(1)
 	go client.runPacketListener()
@@ -102,12 +107,15 @@ func (c *ComputerClient) Connect(ctx context.Context) error {
 
 	c.SafeLog("AssociationRequest sent. Waiting for response...")
 
-	// TODO: Реализовать ожидание Association Response в runPacketListener
-	// Сейчас Connect возвращает успешно после отправки запроса, что неверно.
-	// Нужен механизм сигнализации от runPacketListener об успешной ассоциации.
-	// Временно возвращаем nil для продолжения, но это требует доработки.
+	select {
+	case <-c.assocResponseChan:
+		c.SafeLog("Association Response received.")
+	case <-time.After(5 * time.Second):
+		c.Close()
+		return fmt.Errorf("timeout waiting for Association Response")
+	}
 
-	return nil // Временно: успешное возвращение после отправки запроса
+	return nil
 }
 
 // Close gracefully закрывает соединение и останавливает все горутины клиента.
@@ -210,6 +218,10 @@ func (c *ComputerClient) handleDataExportPacket(data []byte) {
 	case 0x0E:
 		c.SafeLog("runPacketListener: Received Association Response (0x0E)")
 		c.isAssociationDone = true
+		select {
+		case c.assocResponseChan <- struct{}{}:
+		default:
+		}
 	case 0x19:
 		c.SafeLog("runPacketListener: Received Association Abort (0x19).")
 		c.Close()
@@ -226,18 +238,25 @@ func (c *ComputerClient) handleDataExportPacket(data []byte) {
 		}
 		roType := binary.BigEndian.Uint16(data[4:6])
 		switch roType {
-		case ROIV_APDU: // ROIV_APDU
+		case base.ROIV_APDU: // ROIV_APDU
 			c.SafeLog("Data Export Protocol: ROIV_APDU")
 			// обработка ROIV_APDU
-		case RORS_APDU: // RORS_APDU
+		case base.RORS_APDU: // RORS_APDU
 			c.SafeLog("Data Export Protocol: RORS_APDU")
 			result := &packages.SinglePollDataResult{}
 			if err := result.UnmarshalBinary(bytes.NewReader(data)); err != nil {
 				c.SafeLog("failed to unmarshal SinglePollDataResult: %v", err)
 				return
 			}
-			result.ShowInfo(&c.printMu, 0)
-		case ROLRS_APDU: // ROLRS_APDU
+			var mu sync.Mutex
+			result.ShowInfo(&mu, 0)
+			jsonBytes, err := json.MarshalIndent(result.PollMdibDataReply.PollInfoList, "", "  ")
+			if err != nil {
+				c.SafeLog("failed to marshal PollInfoList to JSON: %v", err)
+				return
+			}
+			c.SafeLog("PollInfoList (JSON):\n%s", string(jsonBytes))
+		case base.ROLRS_APDU: // ROLRS_APDU
 			c.SafeLog("Data Export Protocol: ROLRS_APDU")
 			linkedResult := &packages.SinglePollDataResultLinked{}
 			if err := linkedResult.UnmarshalBinary(bytes.NewReader(data)); err != nil {
@@ -245,7 +264,7 @@ func (c *ComputerClient) handleDataExportPacket(data []byte) {
 				return
 			}
 			linkedResult.ShowInfo(&c.printMu, 0)
-		case ROER_APDU: // ROER_APDU
+		case base.ROER_APDU: // ROER_APDU
 			c.SafeLog("Data Export Protocol: ROER_APDU")
 			// обработка ROER_APDU
 		default:
