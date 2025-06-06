@@ -15,7 +15,7 @@ import (
 type PollMdibDataReply struct {
 	PollNumber    uint16            `json:"poll_number"`
 	RelTimeStamp  base.RelativeTime `json:"rel_time_stamp"`
-	AbsTimeStamp  AbsoluteTime      `json:"abs_time_stamp"`
+	AbsTimeStamp  base.AbsoluteTime `json:"abs_time_stamp"`
 	PolledObjType attributes.TYPE   `json:"polled_obj_type"`
 	PolledAttrGrp base.OIDType      `json:"polled_attr_grp"`
 	PollInfoList  *PollInfoList     `json:"poll_info_list"`

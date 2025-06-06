@@ -14,13 +14,7 @@ type RelativeTime uint32
 
 type PrivateOID uint16
 
-type Handle uint16
-
 type MdsContext uint16
-
-type TextID uint32
-
-type FLOATType uint32
 
 type ErrorStatus uint16
 
@@ -41,8 +35,6 @@ type SystemType uint32
 type StartupMode uint32
 
 type MeasurementState uint16
-
-type SimpleColour uint16
 
 type MetricSpec uint16
 

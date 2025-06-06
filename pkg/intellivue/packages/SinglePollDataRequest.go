@@ -42,7 +42,7 @@ func NewSinglePollDataRequest(invoke_id uint16, code base.OIDType) *SinglePollDa
 			MObjClass: base.NOM_MOC_VMS_MDS,
 			MObjInst: base.GlbHandle{
 				ContextID: 0,
-				Handle:    0,
+				Handle:    base.Handle{Value: 0},
 			},
 		},
 		Scope:      0,

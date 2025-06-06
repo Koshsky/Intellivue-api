@@ -59,6 +59,6 @@ func (a *ActionResult) ShowInfo(indentationLevel int) {
 	indent := strings.Repeat("  ", indentationLevel)
 	log.Printf("%s<ActionResult>", indent)
 	a.ManagedObject.ShowInfo(indentationLevel + 1)
-	log.Printf("%s  ActionType: 0x%X", indent, a.ActionType)
+	log.Printf("%s  ActionType: 0x%04X", indent, a.ActionType)
 	log.Printf("%s  Length: %d", indent, a.Length)
 }

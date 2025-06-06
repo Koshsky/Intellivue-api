@@ -54,7 +54,7 @@ func (o PollProfileExt) MarshalBinary() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (o PollProfileExt) UnmarshalBinary(r io.Reader) error {
+func (o *PollProfileExt) UnmarshalBinary(r io.Reader) error {
 	if err := binary.Read(r, binary.BigEndian, &o.Options); err != nil {
 		return fmt.Errorf("failed to unmarshal Options: %v", err)
 	}

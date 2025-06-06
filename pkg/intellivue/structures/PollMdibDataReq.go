@@ -40,7 +40,7 @@ func (p *PollMdibDataReq) MarshalBinary() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (p PollMdibDataReq) UnmarshalBinary(r io.Reader) error {
+func (p *PollMdibDataReq) UnmarshalBinary(r io.Reader) error {
 	if err := binary.Read(r, binary.BigEndian, &p.PollNumber); err != nil {
 		return fmt.Errorf("failed to unmarshal PollNumber: %v", err)
 	}

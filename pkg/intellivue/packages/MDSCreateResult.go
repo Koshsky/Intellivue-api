@@ -90,7 +90,7 @@ func NewMDSCreateResult() *MDSCreateResult {
 			MObjClass: base.NOM_MOC_VMS_MDS,
 			MObjInst: base.GlbHandle{
 				ContextID: 0,
-				Handle:    0,
+				Handle:    base.Handle{Value: 0},
 			},
 		},
 		CurrentTime: 0x0000,

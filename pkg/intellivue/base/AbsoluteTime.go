@@ -1,4 +1,4 @@
-package structures
+package base
 
 import (
 	"bytes"
@@ -18,6 +18,10 @@ type AbsoluteTime struct {
 	Minute       uint8 `json:"minute"`
 	Second       uint8 `json:"second"`
 	SecFractions uint8 `json:"sec_fractions"`
+}
+
+func (a AbsoluteTime) Size() uint16 {
+	return 8
 }
 
 func (a *AbsoluteTime) MarshalBinary() ([]byte, error) {

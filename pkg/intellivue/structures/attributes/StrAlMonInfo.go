@@ -28,9 +28,11 @@ func (s *StrAlMonInfo) MarshalBinary() ([]byte, error) {
 	if err := binary.Write(buf, binary.BigEndian, s.AlertInstNo); err != nil {
 		return nil, fmt.Errorf("failed to marshal AlertInstNo: %w", err)
 	}
-	if err := binary.Write(buf, binary.BigEndian, uint32(s.AlertText)); err != nil {
+	alertTextData, err := s.AlertText.MarshalBinary()
+	if err != nil {
 		return nil, fmt.Errorf("failed to marshal AlertText: %w", err)
 	}
+	buf.Write(alertTextData)
 	if err := binary.Write(buf, binary.BigEndian, uint16(s.Priority)); err != nil {
 		return nil, fmt.Errorf("failed to marshal Priority: %w", err)
 	}
@@ -55,7 +57,7 @@ func (s *StrAlMonInfo) UnmarshalBinary(r io.Reader) error {
 	if err := binary.Read(r, binary.BigEndian, &alertText); err != nil {
 		return fmt.Errorf("failed to unmarshal AlertText: %w", err)
 	}
-	s.AlertText = base.TextID(alertText)
+	s.AlertText = base.TextID{Value: alertText}
 	var priority uint16
 	if err := binary.Read(r, binary.BigEndian, &priority); err != nil {
 		return fmt.Errorf("failed to unmarshal Priority: %w", err)
@@ -76,7 +78,7 @@ func (s *StrAlMonInfo) ShowInfo(indentationLevel int) {
 	indent := strings.Repeat("  ", indentationLevel)
 	log.Printf("%s<StrAlMonInfo>", indent)
 	log.Printf("%s  AlertInstNo: %d", indent, s.AlertInstNo)
-	log.Printf("%s  AlertText: %#04x", indent, uint32(s.AlertText))
+	log.Printf("%s  AlertText: %#04x", indent, s.AlertText.Value)
 	log.Printf("%s  Priority: %d", indent, uint16(s.Priority))
 	log.Printf("%s  Flags: %#04x", indent, uint16(s.Flags))
 	s.String.ShowInfo(indentationLevel + 1)

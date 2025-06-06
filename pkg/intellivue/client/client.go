@@ -262,8 +262,9 @@ func (c *ComputerClient) handleDataExportPacket(data []byte) {
 			if err := linkedResult.UnmarshalBinary(bytes.NewReader(data)); err != nil {
 				c.SafeLog("failed to unmarshal SinglePollDataResultLinked: %v", err)
 				return
+			} else {
+				linkedResult.ShowInfo(&c.printMu, 0)
 			}
-			linkedResult.ShowInfo(&c.printMu, 0)
 		case base.ROER_APDU: // ROER_APDU
 			c.SafeLog("Data Export Protocol: ROER_APDU")
 			// обработка ROER_APDU

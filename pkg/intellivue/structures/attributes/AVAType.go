@@ -75,6 +75,48 @@ func (a *AVAType) UnmarshalBinary(r io.Reader) error {
 			return fmt.Errorf("failed to unmarshal DevAlarmList: %w", err)
 		}
 		val = obj
+	case base.NOM_ATTR_ID_LABEL_STRING:
+		obj := &base.String{}
+		if err := obj.UnmarshalBinary(io.LimitReader(r, int64(a.Length))); err != nil {
+			return fmt.Errorf("failed to unmarshal DevAlarmList: %w", err)
+		}
+		val = obj
+	case base.NOM_ATTR_ID_HANDLE:
+		obj := &base.Handle{}
+		if err := obj.UnmarshalBinary(io.LimitReader(r, int64(a.Length))); err != nil {
+			return fmt.Errorf("failed to unmarshal DevAlarmList: %w", err)
+		}
+		val = obj
+	case base.NOM_ATTR_ID_LABEL:
+		obj := &base.TextID{}
+		if err := obj.UnmarshalBinary(io.LimitReader(r, int64(a.Length))); err != nil {
+			return fmt.Errorf("failed to unmarshal DevAlarmList: %w", err)
+		}
+		val = obj
+	case base.NOM_ATTR_NU_VAL_OBS:
+		obj := &NuObsValue{}
+		if err := obj.UnmarshalBinary(io.LimitReader(r, int64(a.Length))); err != nil {
+			return fmt.Errorf("failed to unmarshal NuObsValue: %w", err)
+		}
+		val = obj
+	case base.NOM_ATTR_COLOR:
+		obj := &base.SimpleColour{}
+		if err := obj.UnmarshalBinary(io.LimitReader(r, int64(a.Length))); err != nil {
+			return fmt.Errorf("failed to unmarshal SimpleColour: %w", err)
+		}
+		val = obj
+	case base.NOM_ATTR_TIME_STAMP_ABS:
+		obj := &base.AbsoluteTime{}
+		if err := obj.UnmarshalBinary(io.LimitReader(r, int64(a.Length))); err != nil {
+			return fmt.Errorf("failed to unmarshal AbsoluteTime: %w", err)
+		}
+		val = obj
+	case base.NOM_ATTR_NU_CMPD_VAL_OBS:
+		obj := &NuObsValCmp{}
+		if err := obj.UnmarshalBinary(io.LimitReader(r, int64(a.Length))); err != nil {
+			return fmt.Errorf("failed to unmarshal NuObsValCmp: %w", err)
+		}
+		val = obj
 	default:
 		hb := make(HexBytes, a.Length)
 		if a.Length > 0 {
