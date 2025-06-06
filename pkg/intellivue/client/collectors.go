@@ -5,12 +5,16 @@ import (
 	"time"
 )
 
-// CollectNumerics собирает и обрабатывает пакеты жизненно важных показателей.
-// Реализована отправка SinglePollDataRequest запроса для сбора числовых данных.
+const (
+	NUMERIC_POLL_INTERVAL  = 15 * time.Second
+	ALARM_POLL_INTERVAL    = 10 * time.Second
+	WAVEFORM_POLL_INTERVAL = 5 * time.Second
+)
+
 func (c *ComputerClient) CollectNumerics(ctx context.Context) {
 	var invokeID uint16 = 1
 
-	pollInterval := 15 * time.Second
+	pollInterval := NUMERIC_POLL_INTERVAL
 	ticker := time.NewTicker(pollInterval)
 	defer ticker.Stop()
 
@@ -34,24 +38,10 @@ func (c *ComputerClient) CollectNumerics(ctx context.Context) {
 	}
 }
 
-func (c *ComputerClient) CollectWaveforms(ctx context.Context) {
-	c.SafeLog("Starting CollectWaveforms goroutine...")
-	// Пример цикла, который будет остановлен при отмене контекста
-	for {
-		select {
-		case <-ctx.Done():
-			c.SafeLog("CollectWaveforms: Context canceled, goroutine ending.")
-			return
-		default:
-			time.Sleep(5 * time.Second)
-		}
-	}
-}
-
 func (c *ComputerClient) CollectAlarms(ctx context.Context) {
 	var invokeID uint16 = 100
 
-	pollInterval := 10 * time.Second
+	pollInterval := ALARM_POLL_INTERVAL
 	ticker := time.NewTicker(pollInterval)
 	defer ticker.Stop()
 
@@ -71,6 +61,20 @@ func (c *ComputerClient) CollectAlarms(ctx context.Context) {
 				c.SafeLog("Error sending SinglePollDataRequest with InvokeID %d: %v", invokeID, err)
 			}
 			invokeID++
+		}
+	}
+}
+
+func (c *ComputerClient) CollectWaveforms(ctx context.Context) {
+	c.SafeLog("Starting CollectWaveforms goroutine...")
+	// Пример цикла, который будет остановлен при отмене контекста
+	for {
+		select {
+		case <-ctx.Done():
+			c.SafeLog("CollectWaveforms: Context canceled, goroutine ending.")
+			return
+		default:
+			time.Sleep(WAVEFORM_POLL_INTERVAL)
 		}
 	}
 }

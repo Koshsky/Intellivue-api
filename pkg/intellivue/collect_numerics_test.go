@@ -8,7 +8,7 @@ import (
 	"github.com/Koshsky/Intellivue-api/pkg/intellivue/client"
 )
 
-func TestRunClientAndPoll(t *testing.T) {
+func TestCollectNumerics(t *testing.T) {
 	client := client.NewComputerClient("192.168.247.101", "24105")
 
 	ctxTest, cancelTest := context.WithTimeout(context.Background(), 10*time.Second)
@@ -20,7 +20,7 @@ func TestRunClientAndPoll(t *testing.T) {
 
 	doneCollecting := make(chan struct{})
 	defer close(doneCollecting)
-	client.CollectAlarms(ctxTest)
+	client.CollectNumerics(ctxTest)
 
 	<-ctxTest.Done()
 
