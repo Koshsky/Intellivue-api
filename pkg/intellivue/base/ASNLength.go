@@ -35,17 +35,11 @@ func (l ASNLength) MarshalBinary() ([]byte, error) {
 }
 
 func (l ASNLength) Size() uint16 {
-	if l == 0 {
+	if l < 127 {
 		return 1
+	} else {
+		return 3
 	}
-
-	value := uint32(l)
-	numBytes := uint16(0)
-	for value > 0 {
-		numBytes++
-		value >>= 8
-	}
-	return numBytes
 }
 
 func (l *ASNLength) UnmarshalBinary(r io.Reader) error {

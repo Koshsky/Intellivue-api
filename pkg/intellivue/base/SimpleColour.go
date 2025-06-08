@@ -3,6 +3,7 @@ package base
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"io"
 	"log"
 	"strings"
@@ -25,6 +26,10 @@ const (
 
 type SimpleColour struct {
 	Value uint16
+}
+
+func (h SimpleColour) MarshalJSON() ([]byte, error) {
+	return json.Marshal(h.String())
 }
 
 func (h SimpleColour) Size() uint16 {

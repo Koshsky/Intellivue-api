@@ -14,11 +14,11 @@ import (
 // Reply message sequence is finished. The message calls a method that returns monitor device data in a
 // single response message.
 type SinglePollDataRequest struct {
-	structures.SPpdu
-	structures.ROapdus
-	structures.ROIVapdu
-	structures.ActionArgument
-	structures.PollMdibDataReq
+	structures.SPpdu           `json:"sp_pdu"`
+	structures.ROapdus         `json:"ro_apdus"`
+	structures.ROIVapdu        `json:"roiv_apdu"`
+	structures.ActionArgument  `json:"action_argument"`
+	structures.PollMdibDataReq `json:"poll_mdib_data_req"`
 }
 
 func (s *SinglePollDataRequest) Size() uint16 {

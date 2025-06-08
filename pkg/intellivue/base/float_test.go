@@ -82,7 +82,7 @@ func TestFLOATType_Float64(t *testing.T) {
 				Mantissa: tt.mantissa,
 			}
 
-			got := f.Float64()
+			got := f.ToFloat64()
 
 			if math.IsNaN(tt.want) {
 				if !math.IsNaN(got) {

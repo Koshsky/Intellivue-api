@@ -6,14 +6,14 @@ import (
 	"io"
 
 	"github.com/Koshsky/Intellivue-api/pkg/intellivue/base"
-	. "github.com/Koshsky/Intellivue-api/pkg/intellivue/structures"
+	"github.com/Koshsky/Intellivue-api/pkg/intellivue/structures"
 )
 
 type MDSCreateResult struct { // TODO: rename to MdsCreateEventResult
-	SPpdu
-	ROapdus
-	RORSapdu
-	EventReportResult
+	structures.SPpdu             `json:"sp_pdu"`
+	structures.ROapdus           `json:"ro_apdus"`
+	structures.RORSapdu          `json:"rors_apdu"`
+	structures.EventReportResult `json:"event_result_report"`
 }
 
 func (m *MDSCreateResult) Size() uint16 {
@@ -69,23 +69,23 @@ func (m *MDSCreateResult) UnmarshalBinary(r io.Reader) error {
 }
 
 func NewMDSCreateResult() *MDSCreateResult {
-	sp := SPpdu{
+	sp := structures.SPpdu{
 		SessionID:  0xE100,
 		PContextID: 2,
 	}
 
-	roap := ROapdus{
+	roap := structures.ROapdus{
 		ROType: base.RORS_APDU,
 		Length: 0x0014,
 	}
 
-	roiv := RORSapdu{
+	roiv := structures.RORSapdu{
 		InvokeID:    1,
 		CommandType: base.CMD_CONFIRMED_EVENT_REPORT,
 		Length:      0x000e,
 	}
 
-	eventReport := EventReportResult{
+	eventReport := structures.EventReportResult{
 		ManagedObject: base.ManagedObjectId{
 			MObjClass: base.NOM_MOC_VMS_MDS,
 			MObjInst: base.GlbHandle{

@@ -8,17 +8,17 @@ import (
 	"strings"
 	"sync"
 
-	. "github.com/Koshsky/Intellivue-api/pkg/intellivue/structures"
+	"github.com/Koshsky/Intellivue-api/pkg/intellivue/structures"
 )
 
 // The Single Poll Data Result message contains a PollInfoList which is of variable length. The length
 // fields in the message depend on the length of the PollInfoList.
 type SinglePollDataResultLinked struct {
-	SPpdu             `json:"sppdu"`
-	ROapdus           `json:"ro_apdus"`
-	ROLRSapdu         `json:"rolrs_apdu"`
-	ActionResult      `json:"action_result"`
-	PollMdibDataReply `json:"poll_mdib_data_reply"`
+	structures.SPpdu             `json:"sp_pdu"`
+	structures.ROapdus           `json:"ro_apdus"`
+	structures.ROLRSapdu         `json:"rolrs_apdu"`
+	structures.ActionResult      `json:"action_result"`
+	structures.PollMdibDataReply `json:"poll_mdib_data_reply"`
 }
 
 func (m *SinglePollDataResultLinked) Size() uint16 {

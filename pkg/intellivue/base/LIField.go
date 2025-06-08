@@ -9,6 +9,14 @@ import (
 
 type LIField uint16
 
+func (l LIField) Size() uint16 {
+	if l < 255 {
+		return 1
+	} else {
+		return 3
+	}
+}
+
 func (l LIField) MarshalBinary() ([]byte, error) {
 	var buf bytes.Buffer
 
@@ -20,19 +28,6 @@ func (l LIField) MarshalBinary() ([]byte, error) {
 	}
 
 	return buf.Bytes(), nil
-}
-
-func writeLIField(buf *bytes.Buffer, val LIField) {
-	data, _ := val.MarshalBinary()
-	buf.Write(data)
-}
-
-func (l LIField) Size() uint16 {
-	if l < 255 {
-		return 1
-	} else {
-		return 3
-	}
 }
 
 func (l *LIField) UnmarshalBinary(r io.Reader) error {

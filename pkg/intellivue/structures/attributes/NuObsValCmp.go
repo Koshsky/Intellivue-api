@@ -16,7 +16,7 @@ type NuObsValCmp struct {
 }
 
 func (a *NuObsValCmp) Size() uint16 {
-	return 4 + a.Length // count + length + list
+	return 4 + a.Length
 }
 
 func (a *NuObsValCmp) MarshalBinary() ([]byte, error) {

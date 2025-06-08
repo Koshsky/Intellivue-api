@@ -44,7 +44,7 @@ func (g *GlbHandle) UnmarshalBinary(reader io.Reader) error {
 
 func (g *GlbHandle) ShowInfo(indentationLevel int) {
 	indent := strings.Repeat("  ", indentationLevel)
-	log.Printf("%s--- GlbHandle ---", indent)
+	log.Printf("%s<GlbHandle>", indent)
 	log.Printf("%s ContextID: 0x%X", indent, g.ContextID)
 	log.Printf("%s Handle: %d", indent, g.Handle)
 }

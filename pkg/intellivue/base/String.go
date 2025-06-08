@@ -3,6 +3,7 @@ package base
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -31,8 +32,12 @@ var privateSymbols = map[rune]string{
 }
 
 type String struct {
-	Length uint16 `json:"length"`
-	Value  string `json:"value"`
+	Length uint16
+	Value  string
+}
+
+func (s String) MarshalJSON() ([]byte, error) {
+	return json.Marshal(s.Value)
 }
 
 func (s *String) Size() uint16 {

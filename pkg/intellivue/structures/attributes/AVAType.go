@@ -117,6 +117,12 @@ func (a *AVAType) UnmarshalBinary(r io.Reader) error {
 			return fmt.Errorf("failed to unmarshal NuObsValCmp: %w", err)
 		}
 		val = obj
+	case base.NOM_ATTR_METRIC_SPECN:
+		obj := &MetricSpec{}
+		if err := obj.UnmarshalBinary(io.LimitReader(r, int64(a.Length))); err != nil {
+			return fmt.Errorf("failed to unmarshal MetricSpec: %w", err)
+		}
+		val = obj
 	default:
 		hb := make(HexBytes, a.Length)
 		if a.Length > 0 {

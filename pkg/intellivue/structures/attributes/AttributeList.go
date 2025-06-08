@@ -7,6 +7,8 @@ import (
 	"io"
 	"log"
 	"strings"
+
+	"github.com/Koshsky/Intellivue-api/pkg/intellivue/base"
 )
 
 type AttributeList struct {
@@ -16,17 +18,20 @@ type AttributeList struct {
 }
 
 func (a *AttributeList) Size() uint16 {
-	return 4 + a.Length // count + length + list
+	return 4 + a.Length
+}
+
+func (a *AttributeList) Append(attrbiuteID base.OIDType, ava AttributeValue) {
+	a.Value = append(a.Value, AVAType{
+		AttributeID: attrbiuteID,
+		Length:      ava.Size(),
+		Value:       ava,
+	})
+	a.Count += 1
+	a.Length += ava.Size() + 4
 }
 
 func (a *AttributeList) MarshalBinary() ([]byte, error) {
-	a.Count = uint16(len(a.Value))
-	total := uint16(0)
-	for _, ava := range a.Value {
-		total += ava.Size()
-	}
-	a.Length = total
-
 	var buf bytes.Buffer
 
 	if err := binary.Write(&buf, binary.BigEndian, a.Count); err != nil {

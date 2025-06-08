@@ -5,27 +5,40 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"log"
+	"strings"
 
 	"github.com/Koshsky/Intellivue-api/pkg/intellivue/base"
 )
 
-// Attribute: Poll Profile Support
 type PollProfileSupport struct {
-	PollProfileRevision base.PollProfileRevision
-	MinPollPeriod       base.RelativeTime
-	MaxMtuRx            uint32
-	MaxMtuTx            uint32
-	MaxBwTx             uint32
-	Options             base.PollProfileOptions
-	OptionalPackages    *AttributeList
+	PollProfileRevision base.PollProfileRevision `json:"poll_profile_revision"`
+	MinPollPeriod       base.RelativeTime        `json:"min_poll_period"`
+	MaxMtuRx            uint32                   `json:"max_mtu_rx"`
+	MaxMtuTx            uint32                   `json:"max_mtu_tx"`
+	MaxBwTx             uint32                   `json:"max_bw_tx"`
+	Options             base.PollProfileOptions  `json:"options"`
+	OptionalPackages    *AttributeList           `json:"optional_packages"`
+}
+
+func (p *PollProfileSupport) ShowInfo(indentationLevel int) {
+	indent := strings.Repeat("  ", indentationLevel)
+
+	log.Printf("%s<PollProfileSupport>", indent)
+	log.Printf("%s  PollProfileRevision: %d", indent, p.PollProfileRevision)
+	log.Printf("%s  MinPollPeriod: %d", indent, p.MinPollPeriod)
+	log.Printf("%s  MaxMtuRx: %d", indent, p.MaxMtuRx)
+	log.Printf("%s  MaxMtuTx: %d", indent, p.MaxMtuTx)
+	log.Printf("%s  MaxBwTx: %d", indent, p.MaxBwTx)
+	log.Printf("%s  Options: 0x00000000", indent)
+	p.OptionalPackages.ShowInfo(indentationLevel + 1)
 }
 
 func (p PollProfileSupport) Size() uint16 {
 	size := uint16(24)
 
-	if p.OptionalPackages != nil {
-		size += p.OptionalPackages.Size()
-	}
+	size += p.OptionalPackages.Size()
+	log.Printf("Size of PollProfileSupport: %d bytes\n", size)
 
 	return size
 }

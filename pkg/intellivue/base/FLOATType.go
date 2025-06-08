@@ -25,8 +25,23 @@ type FLOATType struct {
 	Mantissa int32
 }
 
+func (f *FLOATType) ToFloat64() float64 {
+	switch {
+	case f.IsNaN():
+		return math.NaN()
+	case f.IsInfPos():
+		return math.Inf(1)
+	case f.IsInfNeg():
+		return math.Inf(-1)
+	case f.IsNRes():
+		return math.NaN()
+	default:
+		return float64(f.Mantissa) * math.Pow10(int(f.Exponent))
+	}
+}
+
 func (f FLOATType) MarshalJSON() ([]byte, error) {
-	return json.Marshal(f.String())
+	return json.Marshal(f.ToFloat64())
 }
 
 func (f *FLOATType) Size() uint16 {
@@ -73,21 +88,6 @@ func (f *FLOATType) UnmarshalBinary(r io.Reader) error {
 	return nil
 }
 
-func (f *FLOATType) Float64() float64 {
-	switch {
-	case f.IsNaN():
-		return math.NaN()
-	case f.IsInfPos():
-		return math.Inf(1)
-	case f.IsInfNeg():
-		return math.Inf(-1)
-	case f.IsNRes():
-		return math.NaN()
-	default:
-		return float64(f.Mantissa) * math.Pow10(int(f.Exponent))
-	}
-}
-
 func (f *FLOATType) IsSpecial() bool {
 	return f.IsNaN() || f.IsNRes() || f.IsInfPos() || f.IsInfNeg()
 }
@@ -122,6 +122,6 @@ func (f *FLOATType) String() string {
 	case f.IsNRes():
 		return "NRes"
 	default:
-		return fmt.Sprintf("%f", f.Float64())
+		return fmt.Sprintf("%f", f.ToFloat64())
 	}
 }

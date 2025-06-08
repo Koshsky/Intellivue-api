@@ -93,7 +93,7 @@ func (c *ComputerClient) Connect(ctx context.Context) error {
 
 	// Выполняем процедуру установления ассоциации
 	// Создание сообщения AssociationRequest
-	assocReq, err := packages.NewAssocReqMessage().MarshalBinary()
+	assocReq, err := packages.NewAssociationRequest().MarshalBinary()
 	if err != nil {
 		c.Close() // Закрываем соединение при ошибке создания сообщения
 		return fmt.Errorf("error creating AssociationRequest message: %w", err)

@@ -36,19 +36,9 @@ type StartupMode uint32
 
 type MeasurementState uint16
 
-type MetricSpec uint16
-
-type MetricAccess uint16
-
-type MetricRelevance uint16
-
-type MetricModality uint16
-
 type SaFlags uint16
 
 type SaFixedValId uint16
-
-type MetricState uint16
 
 type MeasureMode uint16
 

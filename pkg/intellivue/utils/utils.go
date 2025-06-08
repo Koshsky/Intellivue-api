@@ -32,7 +32,7 @@ func PrintHexDump(mu *sync.Mutex, title string, data []byte) {
 }
 
 func PrintHex(data []byte) string {
-	const bytesPerLine = 16
+	bytesPerLine := 16
 	var builder strings.Builder
 
 	for i := 0; i < len(data); i += bytesPerLine {

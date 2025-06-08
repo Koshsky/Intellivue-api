@@ -22,10 +22,9 @@ const (
 	POLL_EXT_DYN_MODALITIES       PollProfileExtOptions = 0x01000000 // send timestamps for numerics with dynamic modalities
 )
 
-// Attribute: Poll Profile Extensions
 type PollProfileExt struct {
 	Options PollProfileExtOptions
-	ExtAttr *AttributeList // TODO: определить/импортировать AttributeList
+	ExtAttr *AttributeList
 }
 
 func (o PollProfileExt) Size() uint16 {
@@ -67,7 +66,7 @@ func (o *PollProfileExt) UnmarshalBinary(r io.Reader) error {
 	return nil
 }
 
-func NewPollProfileExtensionAVAType() AVAType {
+func NewPollProfileExt() AVAType {
 	ext := &PollProfileExt{
 		Options: POLL_EXT_PERIOD_NU_1SEC |
 			POLL_EXT_PERIOD_RTSA |
