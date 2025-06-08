@@ -1,4 +1,4 @@
-package packages
+package structures
 
 import (
 	"bytes"
@@ -8,12 +8,11 @@ import (
 	"strings"
 
 	"github.com/Koshsky/Intellivue-api/pkg/intellivue/base"
-	"github.com/Koshsky/Intellivue-api/pkg/intellivue/structures"
 )
 
 type UserData struct {
 	Length base.ASNLength
-	Data   structures.MDSEUserInfoStd
+	Data   MDSEUserInfoStd
 }
 
 func (u *UserData) Size() uint16 {

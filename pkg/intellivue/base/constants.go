@@ -1,6 +1,15 @@
 package base
 
 const (
+	CN_SPDU_SI uint8 = 0x0D // Session Connect
+	AC_SPDU_SI uint8 = 0x0E // Session Accept
+	RF_SPDU_SI uint8 = 0x0C // Session Refuse
+	FN_SPDU_SI uint8 = 0x09 // Session Finish
+	DN_SPDU_SI uint8 = 0x0A // Session Disconnect
+	AB_SPDU_SI uint8 = 0x19 // Session Abort
+)
+
+const (
 	NOM_ATTR_AL_MON_P_AL_LIST OIDType = 0x0902
 	NOM_ATTR_AL_MON_T_AL_LIST OIDType = 0x0904
 	NOM_ATTR_DEV_AL_COND      OIDType = 0x0916

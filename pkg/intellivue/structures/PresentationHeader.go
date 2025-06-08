@@ -1,4 +1,4 @@
-package packages
+package structures
 
 import (
 	"bytes"
@@ -45,7 +45,7 @@ func (p *PresentationHeader) MarshalBinary() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (p *PresentationHeader) UnmarshalBinary(r io.Reader) error {
+func (p *PresentationHeader) UnmarshalBinary(r io.Reader, length uint16) error {
 	if p == nil {
 		return fmt.Errorf("nil PresentationHeader receiver")
 	}
@@ -55,10 +55,12 @@ func (p *PresentationHeader) UnmarshalBinary(r io.Reader) error {
 	if err := p.Length.UnmarshalBinary(r); err != nil {
 		return fmt.Errorf("failed to unmarshal ManagedObject: %w", err)
 	}
-	p.Data = make([]byte, 1024)
-	_, err := io.ReadFull(r, p.Data)
+	p.Data = make([]byte, length)
+	read, err := io.ReadFull(r, p.Data)
 	if err != nil {
 		return fmt.Errorf("failed to read session data: %w", err)
+	} else if read != int(length) {
+		return fmt.Errorf("failed to read session data: read %d bytes, expected %d", read, length)
 	}
 	return nil
 }

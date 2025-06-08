@@ -1,4 +1,4 @@
-package packages
+package structures
 
 import (
 	"bytes"
@@ -43,13 +43,18 @@ func (s *SessionHeader) MarshalBinary() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (s *SessionHeader) UnmarshalBinary(r io.Reader) error {
+func (s *SessionHeader) UnmarshalBinary(r io.Reader, expetedType byte) error {
 	if s == nil {
 		return fmt.Errorf("nil SessionHeader receiver")
 	}
+
 	if err := binary.Read(r, binary.BigEndian, &s.Type); err != nil {
 		return fmt.Errorf("failed to unmarshal Type: %w", err)
 	}
+	if s.Type != expetedType {
+		return fmt.Errorf("invalid session header type: %X", s.Type)
+	}
+
 	if err := s.Length.UnmarshalBinary(r); err != nil {
 		return fmt.Errorf("failed to unmarshal Length: %w", err)
 	}

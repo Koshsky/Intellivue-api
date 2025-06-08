@@ -1,4 +1,4 @@
-package packages
+package structures
 
 import (
 	"fmt"
@@ -25,11 +25,13 @@ func (s *SessionData) MarshalBinary() ([]byte, error) {
 	return s.Data, nil
 }
 
-func (s *SessionData) UnmarshalBinary(r io.Reader) error {
-	s.Data = make([]byte, 1024)
-	_, err := io.ReadFull(r, s.Data)
+func (s *SessionData) UnmarshalBinary(r io.Reader, length uint16) error {
+	s.Data = make([]byte, length)
+	read, err := io.ReadFull(r, s.Data)
 	if err != nil {
 		return fmt.Errorf("failed to read session data: %w", err)
+	} else if read != int(length) {
+		return fmt.Errorf("failed to read session data: read %d bytes, expected %d", read, length)
 	}
 	return nil
 }

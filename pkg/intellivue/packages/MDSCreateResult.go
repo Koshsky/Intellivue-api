@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/Koshsky/Intellivue-api/pkg/intellivue/base"
 	"github.com/Koshsky/Intellivue-api/pkg/intellivue/structures"
 )
 
@@ -66,42 +65,4 @@ func (m *MDSCreateResult) UnmarshalBinary(r io.Reader) error {
 	}
 
 	return nil
-}
-
-func NewMDSCreateResult() *MDSCreateResult {
-	sp := structures.SPpdu{
-		SessionID:  0xE100,
-		PContextID: 2,
-	}
-
-	roap := structures.ROapdus{
-		ROType: base.RORS_APDU,
-		Length: 0x0014,
-	}
-
-	roiv := structures.RORSapdu{
-		InvokeID:    1,
-		CommandType: base.CMD_CONFIRMED_EVENT_REPORT,
-		Length:      0x000e,
-	}
-
-	eventReport := structures.EventReportResult{
-		ManagedObject: base.ManagedObjectId{
-			MObjClass: base.NOM_MOC_VMS_MDS,
-			MObjInst: base.GlbHandle{
-				ContextID: 0,
-				Handle:    base.Handle{Value: 0},
-			},
-		},
-		CurrentTime: 0x0000,
-		EventType:   base.NOM_NOTI_MDS_CREAT,
-		Length:      0x0000,
-	}
-
-	return &MDSCreateResult{
-		SPpdu:             sp,
-		ROapdus:           roap,
-		RORSapdu:          roiv,
-		EventReportResult: eventReport,
-	}
 }

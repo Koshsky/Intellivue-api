@@ -11,10 +11,10 @@ import (
 )
 
 type AssociationRequest struct {
-	AssocReqSessionHeader       SessionHeader
-	AssocReqSessionData         SessionData
-	AssocReqPresentationHeader  PresentationHeader
-	AssocReqUserData            UserData
+	AssocReqSessionHeader       structures.SessionHeader
+	AssocReqSessionData         structures.SessionData
+	AssocReqPresentationHeader  structures.PresentationHeader
+	AssocReqUserData            structures.UserData
 	AssocReqPresentationTrailer []byte
 }
 
@@ -62,19 +62,19 @@ func NewAssociationRequest() *AssociationRequest {
 	}
 
 	req := &AssociationRequest{
-		AssocReqSessionHeader: SessionHeader{
+		AssocReqSessionHeader: structures.SessionHeader{
 			Type: 0x0D,
 			// need to specify Length in MarshalBinary
 		},
-		AssocReqSessionData: SessionData{
+		AssocReqSessionData: structures.SessionData{
 			Data: sessionData,
 		},
-		AssocReqPresentationHeader: PresentationHeader{
+		AssocReqPresentationHeader: structures.PresentationHeader{
 			Type: 0xC1,
 			// need to specify Length in MarshalBinary
 			Data: presentationData,
 		},
-		AssocReqUserData: UserData{
+		AssocReqUserData: structures.UserData{
 			Data: userData,
 		},
 		AssocReqPresentationTrailer: trailerData,
