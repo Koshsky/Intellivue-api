@@ -5,6 +5,8 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"log"
+	"strings"
 
 	"github.com/Koshsky/Intellivue-api/pkg/intellivue/base"
 	"github.com/Koshsky/Intellivue-api/pkg/intellivue/structures/attributes"
@@ -52,4 +54,12 @@ func (p *PollMdibDataReq) UnmarshalBinary(r io.Reader) error {
 	}
 
 	return nil
+}
+
+func (p *PollMdibDataReq) ShowInfo(indentationLevel int) {
+	indent := strings.Repeat(" ", indentationLevel*2)
+	log.Printf("%s<PollMdibDataReq>\n", indent)
+	log.Printf("%s  PollNumber: %d\n", indent, p.PollNumber)
+	log.Printf("%s  PolledObjType: Partition=0x%04X, Code=%d\n", indent, p.PolledObjType.Partition, p.PolledObjType.Code)
+	log.Printf("%s  PolledAttrGrp: 0x%04X\n", indent, p.PolledAttrGrp)
 }

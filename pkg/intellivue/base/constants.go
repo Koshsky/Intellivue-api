@@ -82,6 +82,7 @@ const (
 	CMD_SET                    CMDType = 0x0004
 	CMD_CONFIRMED_SET          CMDType = 0x0005
 	CMD_CONFIRMED_ACTION       CMDType = 0x0007
+	CMD_MDS_CREATE_EVENT       CMDType = 0x0002 // MDS Create Event
 )
 
 const (

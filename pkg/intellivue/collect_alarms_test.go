@@ -9,24 +9,19 @@ import (
 )
 
 func TestCollectAlarms(t *testing.T) {
-	client := client.NewComputerClient("192.168.247.101", "24105")
+	client := client.NewComputerClient("192.168.247.101:24105", "192.168.247.100:80")
 
-	ctxTest, cancelTest := context.WithTimeout(context.Background(), 10*time.Second)
+	ctxTest, cancelTest := context.WithTimeout(context.Background(), 20*time.Second)
 
 	if err := client.Connect(ctxTest); err != nil {
 		cancelTest()
 		t.Fatalf("error when establishing connectionы: %v", err)
 	}
 
-	doneCollecting := make(chan struct{})
-	defer close(doneCollecting)
-	client.CollectAlarms(ctxTest)
+	client.CollectAlarms()
 
 	<-ctxTest.Done()
 
-	<-doneCollecting
-
 	time.Sleep(100 * time.Millisecond)
 	cancelTest()
-	client.Close()
 }

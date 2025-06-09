@@ -46,6 +46,6 @@ func (s *SPpdu) UnmarshalBinary(reader io.Reader) error {
 func (s *SPpdu) ShowInfo(indentationLevel int) {
 	indent := strings.Repeat("  ", indentationLevel)
 	log.Printf("%s<SPpdu>", indent)
-	log.Printf("%s  SessionID: 0x%X", indent, s.SessionID)
-	log.Printf("%s  PContextID: %d", indent, s.PContextID)
+	log.Printf("%s  SessionID: 0x%04X", indent, s.SessionID)
+	log.Printf("%s  PContextID: 0x%04X", indent, s.PContextID)
 }

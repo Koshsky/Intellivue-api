@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"log"
+	"sync"
 
 	"github.com/Koshsky/Intellivue-api/pkg/intellivue/base"
 	"github.com/Koshsky/Intellivue-api/pkg/intellivue/structures"
@@ -128,4 +130,16 @@ func (s *SinglePollDataRequest) UnmarshalBinary(r io.Reader) error {
 	}
 
 	return nil
+}
+
+func (s *SinglePollDataRequest) ShowInfo(mu *sync.Mutex) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	log.Printf("<SinglePollDataRequest>\n")
+	s.SPpdu.ShowInfo(1)
+	s.ROapdus.ShowInfo(1)
+	s.ROIVapdu.ShowInfo(1)
+	s.ActionArgument.ShowInfo(1)
+	s.PollMdibDataReq.ShowInfo(1)
 }

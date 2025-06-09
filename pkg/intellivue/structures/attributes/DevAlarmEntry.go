@@ -3,12 +3,39 @@ package attributes
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"strings"
 
 	"github.com/Koshsky/Intellivue-api/pkg/intellivue/base"
+)
+
+const (
+	BEDSIDE_AUDIBLE        = 0x4000
+	CENTRAL_AUDIBLE        = 0x2000
+	VISUAL_LATCHING        = 0x1000
+	AUDIBLE_LATCHING       = 0x0800
+	SHORT_YELLOW_EXTENSION = 0x0400
+	DERIVED                = 0x0200
+
+	AL_INHIBITED      base.AlertState = 0x8000
+	AL_SUSPENDED      base.AlertState = 0x4000
+	AL_LATCHED        base.AlertState = 0x2000
+	AL_SILENCED_RESET base.AlertState = 0x1000
+
+	AL_DEV_IN_TEST_MODE base.AlertState = 0x0400
+	AL_DEV_IN_STANDBY   base.AlertState = 0x0200
+	AL_DEV_IN_DEMO_MODE base.AlertState = 0x0100
+
+	NO_ALERT     base.AlertType = 0x0000
+	LOW_PRI_T_AL base.AlertType = 0x0001
+	MED_PRI_T_AL base.AlertType = 0x0002
+	HI_PRI_T_AL  base.AlertType = 0x0004
+	LOW_PRI_P_AL base.AlertType = 0x0100
+	MED_PRI_P_AL base.AlertType = 0x0200
+	HI_PRI_P_AL  base.AlertType = 0x0400
 )
 
 type DevAlarmEntry struct {
@@ -20,6 +47,68 @@ type DevAlarmEntry struct {
 	AlertInfoID base.PrivateOID      `json:"alert_info_id"`
 	Length      uint16               `json:"length"`
 	Info        StrAlMonInfo         `json:"info"`
+}
+
+func alertTypeToString(alertType base.AlertType) string {
+	switch alertType {
+	case NO_ALERT:
+		return "no_alert"
+	case LOW_PRI_T_AL:
+		return "low_pri_t_al"
+	case MED_PRI_T_AL:
+		return "med_pri_t_al"
+	case HI_PRI_T_AL:
+		return "hi_pri_t_al"
+	case LOW_PRI_P_AL:
+		return "low_pri_p_al"
+	case MED_PRI_P_AL:
+		return "med_pri_p_al"
+	case HI_PRI_P_AL:
+		return "hi_pri_p_al"
+	default:
+		return fmt.Sprintf("unknown_alert_type_0x%04X", uint16(alertType))
+	}
+}
+func alertStateToString(alertState base.AlertState) string {
+	switch alertState & 0xF000 {
+	case AL_INHIBITED:
+		return "inhibited"
+	case AL_SUSPENDED:
+		return "suspended"
+	case AL_LATCHED:
+		return "latched"
+	case AL_SILENCED_RESET:
+		return "silenced_reset"
+	default:
+		return fmt.Sprintf("unknown_alert_state_0x%04X", uint16(alertState&0xF000))
+	}
+}
+func devModeToString(alertState base.AlertState) string {
+	switch alertState & 0x0F00 {
+	case AL_DEV_IN_TEST_MODE:
+		return "test"
+	case AL_DEV_IN_STANDBY:
+		return "standby"
+	case AL_DEV_IN_DEMO_MODE:
+		return "demo"
+	default:
+		return fmt.Sprintf("unknown_dev_mode_0x%04X", uint16(alertState&0x0F00))
+	}
+}
+
+func (d *DevAlarmEntry) MarshalJSON() ([]byte, error) {
+	jsonData := map[string]interface{}{
+		// "alert_source"
+		// "alert_code"
+		"alert_type":  d.AlertType,
+		"alert_state": d.AlertState,
+		// "object"
+		// "alert_info_id"
+		// "priority"
+		"flags": d.Info.Flags,
+		"value": d.Info.String,
+	}
+	return json.Marshal(jsonData)
 }
 
 func (d *DevAlarmEntry) Size() uint16 {

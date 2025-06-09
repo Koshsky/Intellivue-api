@@ -48,8 +48,8 @@ func NewAssociationRequest() *AssociationRequest {
 	}
 	supportedAprofiles.Append(base.NOM_POLL_PROFILE_SUPPORT, pollProfileSupport)
 
-	mdibObjSupport := attributes.NewMDIBObjSupport()
-	supportedAprofiles.Append(base.NOM_MDIB_OBJ_SUPPORT, mdibObjSupport)
+	// mdibObjSupport := attributes.NewMDIBObjSupport()
+	// supportedAprofiles.Append(base.NOM_MDIB_OBJ_SUPPORT, mdibObjSupport)
 
 	userData := structures.MDSEUserInfoStd{
 		ProtocolVersion:     base.MDDL_VERSION1,

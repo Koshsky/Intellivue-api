@@ -41,7 +41,16 @@ func (f *FLOATType) ToFloat64() float64 {
 }
 
 func (f FLOATType) MarshalJSON() ([]byte, error) {
-	return json.Marshal(f.ToFloat64())
+	switch {
+	case f.IsNaN() || f.IsNRes():
+		return []byte("null"), nil
+	case f.IsInfPos():
+		return []byte("\"+INF\""), nil
+	case f.IsInfNeg():
+		return []byte("\"-INF\""), nil
+	default:
+		return json.Marshal(f.ToFloat64())
+	}
 }
 
 func (f *FLOATType) Size() uint16 {

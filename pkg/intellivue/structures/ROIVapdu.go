@@ -5,6 +5,8 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"log"
+	"strings"
 
 	"github.com/Koshsky/Intellivue-api/pkg/intellivue/base"
 )
@@ -48,4 +50,12 @@ func (r *ROIVapdu) UnmarshalBinary(reader io.Reader) error {
 	}
 
 	return nil
+}
+
+func (r *ROIVapdu) ShowInfo(indentationLevel int) {
+	indent := strings.Repeat(" ", indentationLevel*2)
+	log.Printf("%s<ROIVapdu>\n", indent)
+	log.Printf("%s  InvokeID: %d\n", indent, r.InvokeID)
+	log.Printf("%s  CommandType: 0x%04X\n", indent, r.CommandType)
+	log.Printf("%s  Length: %d\n", indent, r.Length)
 }

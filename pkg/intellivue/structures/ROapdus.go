@@ -46,6 +46,6 @@ func (r *ROapdus) UnmarshalBinary(reader io.Reader) error {
 func (r *ROapdus) ShowInfo(indentationLevel int) {
 	indent := strings.Repeat("  ", indentationLevel)
 	log.Printf("%s<ROapdus>", indent)
-	log.Printf("%s  ROType: 0x%X", indent, r.ROType)
-	log.Printf("%s  Length: %d", indent, r.Length)
+	log.Printf("%s  ROType: 0x%04X", indent, r.ROType)
+	log.Printf("%s  Length: 0x%04X", indent, r.Length)
 }

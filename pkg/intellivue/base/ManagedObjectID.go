@@ -49,4 +49,5 @@ func (m *ManagedObjectId) ShowInfo(indentationLevel int) {
 	indent := strings.Repeat("  ", indentationLevel)
 	log.Printf("%s<ManagedObjectId>", indent)
 	log.Printf("%s  MObjClass: %#04x", indent, m.MObjClass)
+	m.MObjInst.ShowInfo(indentationLevel + 1)
 }

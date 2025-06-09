@@ -1,0 +1,51 @@
+version: "3"
+
+networks:
+  monitoring:
+    driver: bridge # host  #bridge
+    
+services:
+  influxdb:
+    image: influxdb:2.7
+    container_name: influxdb
+    restart: unless-stopped
+    ports:
+      - "8086:8086"  # Порт для API InfluxDB
+     
+    expose:
+      - 8086
+      
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=admin123  # Замените на свой пароль
+      - DOCKER_INFLUXDB_INIT_ORG=myorg
+      - DOCKER_INFLUXDB_INIT_BUCKET=mybucket
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=my-super-secret-auth-token  # Замените на свой токен
+    networks:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana-oss
+    container_name: grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    restart: unless-stopped
+    # depends_on:
+    #   - prometheus
+    ports:
+      - 3000:3000
+    expose:
+      - 3000
+    networks:
+      - monitoring
+
+volumes:
+  influxdb_data: {}
+  grafana_data: {}

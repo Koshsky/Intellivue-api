@@ -5,6 +5,8 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"log"
+	"strings"
 
 	"github.com/Koshsky/Intellivue-api/pkg/intellivue/base"
 )
@@ -57,4 +59,15 @@ func (a *ActionArgument) UnmarshalBinary(reader io.Reader) error {
 	}
 
 	return nil
+}
+
+func (a *ActionArgument) ShowInfo(indentationLevel int) {
+	indent := strings.Repeat(" ", indentationLevel*2)
+	log.Printf("%s<ActionArgument>\n", indent)
+	log.Printf("%s  <ManagedObject>\n", indent)
+	log.Printf("%s    MObjClass: 0x%04X\n", indent, a.ManagedObject.MObjClass)
+	log.Printf("%s  </ManagedObject>\n", indent)
+	log.Printf("%s  Scope: %d\n", indent, a.Scope)
+	log.Printf("%s  ActionType: 0x%04X\n", indent, a.ActionType)
+	log.Printf("%s  Length: %d\n", indent, a.Length)
 }
