@@ -18,17 +18,21 @@ type ComputerClient struct {
 	monitorAddr  string
 	receiverAddr string
 	printMu      sync.Mutex
-	roivChan     chan []byte
-	rorsChan     chan []byte
-	rolrsChan    chan []byte
-	ctx          context.Context
-	cancel       context.CancelFunc
-	wg           sync.WaitGroup
+
+	roivChan  chan []byte
+	rorsChan  chan []byte
+	rolrsChan chan []byte
+	roerChan  chan []byte
+
+	ctx    context.Context
+	cancel context.CancelFunc
+	wg     sync.WaitGroup
 
 	isAssociationDone bool
 	closeOnce         sync.Once
 	assocResponseChan chan struct{}
-	mdsCreateHandler  func()
+	// TODO: 10.06.2025: remove from struct.
+	mdsCreateHandler func()
 }
 
 func NewComputerClient(monitorAddr, receiverAddress string) *ComputerClient {
@@ -39,6 +43,7 @@ func NewComputerClient(monitorAddr, receiverAddress string) *ComputerClient {
 		roivChan:          make(chan []byte, 100),
 		rorsChan:          make(chan []byte, 100),
 		rolrsChan:         make(chan []byte, 100),
+		roerChan:          make(chan []byte, 100),
 		ctx:               ctx,
 		cancel:            cancel,
 		assocResponseChan: make(chan struct{}, 1),
@@ -47,14 +52,11 @@ func NewComputerClient(monitorAddr, receiverAddress string) *ComputerClient {
 
 func (c *ComputerClient) Connect(ctx context.Context) error {
 	c.SafeLog("Trying to establish UDP connection with %s", c.monitorAddr)
-
 	c.ctx, c.cancel = context.WithCancel(ctx)
-
 	udpAddr, err := net.ResolveUDPAddr("udp", c.monitorAddr)
 	if err != nil {
 		return fmt.Errorf("error resolving UDP address: %w", err)
 	}
-
 	conn, err := net.DialUDP("udp", nil, udpAddr)
 	if err != nil {
 		return fmt.Errorf("error creating UDP connection: %w", err)
@@ -67,7 +69,6 @@ func (c *ComputerClient) Connect(ctx context.Context) error {
 		c.Close()
 		return fmt.Errorf("error resolving receiver UDP address: %w", err)
 	}
-
 	receiverConn, err := net.DialUDP("udp", nil, receiverAddr)
 	if err != nil {
 		c.Close()
@@ -76,7 +77,6 @@ func (c *ComputerClient) Connect(ctx context.Context) error {
 	c.receiverConn = receiverConn
 	c.SafeLog("Receiver UDP connection established.")
 
-	// Запускаем обработчики пакетов
 	c.StartPacketHandlers()
 
 	c.wg.Add(1)
@@ -203,7 +203,28 @@ func (c *ComputerClient) runPacketListener() {
 			if n == 0 {
 				continue
 			}
-			c.handlePacket(buffer[:n])
+			firstByte := buffer[0]
+			switch firstByte {
+			case base.AC_SPDU_SI:
+				c.SafeLog("runPacketListener: Received Association Response (0x%02X)", firstByte)
+				c.isAssociationDone = true
+				c.assocResponseChan <- struct{}{}
+			case base.AB_SPDU_SI:
+				c.SafeLog("runPacketListener: Received Association Abort (0x%02X).", firstByte)
+				c.isAssociationDone = false
+				c.Close()
+				return
+			case base.RF_SPDU_SI:
+				c.SafeLog("runPacketListener: Received Association Refuse (0x%02X).", firstByte)
+				c.isAssociationDone = false
+				c.Close()
+				return
+			case 0xE1:
+				c.SafeLog("runPacketListener: Received Data Export Protocol packet (0x%02X).", firstByte)
+				c.handleDataExportPacket(buffer[:n])
+			default:
+				c.SafeLog("runPacketListener: Received unknown packet (0x%02X). Ignoring.", firstByte)
+			}
 		}
 	}
 }
@@ -212,29 +233,4 @@ func (c *ComputerClient) SafeLog(format string, args ...interface{}) {
 	c.printMu.Lock()
 	defer c.printMu.Unlock()
 	log.Printf(format, args...)
-}
-
-func (c *ComputerClient) handlePacket(data []byte) {
-	firstByte := data[0]
-	switch firstByte {
-	case base.AC_SPDU_SI:
-		c.SafeLog("runPacketListener: Received Association Response (0x0E)")
-		c.isAssociationDone = true
-		c.assocResponseChan <- struct{}{}
-	case base.AB_SPDU_SI:
-		c.SafeLog("runPacketListener: Received Association Abort (0x19).")
-		c.isAssociationDone = false
-		c.Close()
-		return
-	case base.RF_SPDU_SI:
-		c.SafeLog("runPacketListener: Received Association Refuse (0x0C).")
-		c.isAssociationDone = false
-		c.Close()
-		return
-	case 0xE1:
-		c.SafeLog("runPacketListener: Received Data Export Protocol packet (0xE1). Processing...")
-		c.handleDataExportPacket(data)
-	default:
-		c.SafeLog("runPacketListener: Received unknown packet (0x%02X). Ignoring.", firstByte)
-	}
 }

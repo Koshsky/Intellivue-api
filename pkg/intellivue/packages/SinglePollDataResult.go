@@ -11,8 +11,6 @@ import (
 	"github.com/Koshsky/Intellivue-api/pkg/intellivue/structures"
 )
 
-// The Single Poll Data Result message contains a PollInfoList which is of variable length. The length
-// fields in the message depend on the length of the PollInfoList.
 type SinglePollDataResult struct {
 	structures.SPpdu             `json:"sp_pdu"`
 	structures.ROapdus           `json:"ro_apdus"`

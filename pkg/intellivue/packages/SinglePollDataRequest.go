@@ -12,9 +12,6 @@ import (
 	"github.com/Koshsky/Intellivue-api/pkg/intellivue/structures/attributes"
 )
 
-// This message can be sent as soon as the logical connection is established and the MDS Create Event/
-// Reply message sequence is finished. The message calls a method that returns monitor device data in a
-// single response message.
 type SinglePollDataRequest struct {
 	structures.SPpdu           `json:"sp_pdu"`
 	structures.ROapdus         `json:"ro_apdus"`

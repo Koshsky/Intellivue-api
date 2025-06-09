@@ -8,19 +8,13 @@ import (
 
 	"github.com/Koshsky/Intellivue-api/pkg/intellivue/base"
 	"github.com/Koshsky/Intellivue-api/pkg/intellivue/packages"
-	"github.com/Koshsky/Intellivue-api/pkg/intellivue/structures"
 )
-
-// В структуру ComputerClient должны быть добавлены эти поля:
-// roivChan   chan []byte
-// rorsChan   chan []byte
-// rolrsChan  chan []byte
-// ctx        context.Context
 
 func (c *ComputerClient) StartPacketHandlers() {
 	go c.roivHandler()
 	go c.rorsHandler()
 	go c.rolrsHandler()
+	go c.roerHandler()
 }
 
 func (c *ComputerClient) handleDataExportPacket(data []byte) {
@@ -59,6 +53,19 @@ func (c *ComputerClient) handleDataExportPacket(data []byte) {
 	}
 }
 
+func (c *ComputerClient) roerHandler() {
+	c.SafeLog("ROER handler started")
+	for {
+		select {
+		case <-c.ctx.Done():
+			c.SafeLog("ROER handler: context done")
+			return
+		case data := <-c.roerChan:
+			c.SafeLog("ROER handler: received data, length: %d", len(data))
+		}
+	}
+}
+
 func (c *ComputerClient) roivHandler() {
 	var connMu sync.Mutex
 	c.SafeLog("ROIV handler started")
@@ -83,35 +90,8 @@ func (c *ComputerClient) roivHandler() {
 				if c.mdsCreateHandler != nil {
 					c.mdsCreateHandler()
 				}
-				// Отправляем MDSCreateResult
-				result := &packages.MDSCreateResult{
-					SPpdu: structures.SPpdu{
-						SessionID:  0xE100,
-						PContextID: 2,
-					},
-					ROapdus: structures.ROapdus{
-						ROType: base.RORS_APDU,
-						Length: 20,
-					},
-					RORSapdu: structures.RORSapdu{
-						InvokeID:    1,
-						CommandType: base.CMD_CONFIRMED_EVENT_REPORT,
-						Length:      14,
-					},
-					EventReportResult: structures.EventReportResult{
-						ManagedObject: base.ManagedObjectId{
-							MObjClass: base.NOM_MOC_VMO_METRIC_NU,
-							MObjInst: base.GlbHandle{
-								ContextID: 0x0001,
-								Handle:    base.Handle{0x00000000},
-							},
-						},
-						CurrentTime: 4736768,
-						EventType:   base.NOM_NOTI_MDS_CREAT,
-						Length:      0,
-					},
-				}
-				resultBytes, err := result.MarshalBinary()
+				createResult := packages.NewMDSCreateResult()
+				resultBytes, err := createResult.MarshalBinary()
 				if err != nil {
 					c.SafeLog("Failed to marshal MDSCreateResult: %v", err)
 					continue
@@ -124,14 +104,6 @@ func (c *ComputerClient) roivHandler() {
 				}
 				connMu.Unlock()
 				c.SafeLog("MDSCreateResult sent")
-			case base.CMD_CONFIRMED_ACTION:
-				c.SafeLog("Received CMD_CONFIRMED_ACTION")
-				packet := &packages.EventReportArgument{}
-				if err := packet.UnmarshalBinary(bytes.NewReader(data)); err != nil {
-					c.SafeLog("Failed to unmarshal EventReportArgument: %v", err)
-					continue
-				}
-				packet.ShowInfo(&c.printMu)
 			default:
 				c.SafeLog("ROIV_APDU: unknown commandType: 0x%04X", commandType)
 			}
