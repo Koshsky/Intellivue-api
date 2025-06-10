@@ -9,18 +9,18 @@ import (
 	"github.com/Koshsky/Intellivue-api/pkg/intellivue/structures"
 )
 
-type MDSCreateResult struct { // TODO: rename to MdsCreateEventResult
+type MdsCreateEventResult struct {
 	structures.SPpdu             `json:"sp_pdu"`
 	structures.ROapdus           `json:"ro_apdus"`
 	structures.RORSapdu          `json:"rors_apdu"`
 	structures.EventReportResult `json:"event_result_report"`
 }
 
-func (m *MDSCreateResult) Size() uint16 {
+func (m *MdsCreateEventResult) Size() uint16 {
 	return m.SPpdu.Size() + m.ROapdus.Size() + m.RORSapdu.Size() + m.EventReportResult.Size()
 }
 
-func (m *MDSCreateResult) MarshalBinary() ([]byte, error) {
+func (m *MdsCreateEventResult) MarshalBinary() ([]byte, error) {
 	buf := new(bytes.Buffer)
 
 	spData, err := m.SPpdu.MarshalBinary()
@@ -47,7 +47,7 @@ func (m *MDSCreateResult) MarshalBinary() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (m *MDSCreateResult) UnmarshalBinary(r io.Reader) error {
+func (m *MdsCreateEventResult) UnmarshalBinary(r io.Reader) error {
 	if m == nil {
 		return fmt.Errorf("nil MDSCreateResult receiver")
 	}
@@ -68,8 +68,8 @@ func (m *MDSCreateResult) UnmarshalBinary(r io.Reader) error {
 	return nil
 }
 
-func NewMDSCreateResult() *MDSCreateResult {
-	return &MDSCreateResult{
+func NewMdsCreateEventResult() *MdsCreateEventResult {
+	return &MdsCreateEventResult{
 		SPpdu: structures.SPpdu{
 			SessionID:  0xE100,
 			PContextID: 2,

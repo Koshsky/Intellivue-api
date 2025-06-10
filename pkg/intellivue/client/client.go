@@ -19,10 +19,11 @@ type ComputerClient struct {
 	receiverAddr string
 	printMu      sync.Mutex
 
-	roivChan  chan []byte
-	rorsChan  chan []byte
-	rolrsChan chan []byte
-	roerChan  chan []byte
+	roivChan      chan []byte
+	rorsChan      chan []byte
+	rolrsChan     chan []byte
+	roerChan      chan []byte
+	mdsCreateChan chan struct{}
 
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -31,15 +32,13 @@ type ComputerClient struct {
 	isAssociationDone bool
 	closeOnce         sync.Once
 	assocResponseChan chan struct{}
-	// TODO: 10.06.2025: remove from struct.
-	mdsCreateHandler func()
 }
 
-func NewComputerClient(monitorAddr, receiverAddress string) *ComputerClient {
+func NewComputerClient(monitorAddr, receiverAddr string) *ComputerClient {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &ComputerClient{
 		monitorAddr:       monitorAddr,
-		receiverAddr:      receiverAddress,
+		receiverAddr:      receiverAddr,
 		roivChan:          make(chan []byte, 100),
 		rorsChan:          make(chan []byte, 100),
 		rolrsChan:         make(chan []byte, 100),
@@ -47,92 +46,42 @@ func NewComputerClient(monitorAddr, receiverAddress string) *ComputerClient {
 		ctx:               ctx,
 		cancel:            cancel,
 		assocResponseChan: make(chan struct{}, 1),
+		mdsCreateChan:     make(chan struct{}, 1),
 	}
 }
 
 func (c *ComputerClient) Connect(ctx context.Context) error {
-	c.SafeLog("Trying to establish UDP connection with %s", c.monitorAddr)
 	c.ctx, c.cancel = context.WithCancel(ctx)
-	udpAddr, err := net.ResolveUDPAddr("udp", c.monitorAddr)
-	if err != nil {
-		return fmt.Errorf("error resolving UDP address: %w", err)
-	}
-	conn, err := net.DialUDP("udp", nil, udpAddr)
-	if err != nil {
-		return fmt.Errorf("error creating UDP connection: %w", err)
-	}
-	c.conn = conn
-	c.SafeLog("UDP connection established.")
 
-	receiverAddr, err := net.ResolveUDPAddr("udp", c.receiverAddr)
-	if err != nil {
-		c.Close()
-		return fmt.Errorf("error resolving receiver UDP address: %w", err)
+	if err := c.connectUDP(); err != nil {
+		return fmt.Errorf("failed to establish UDP connection: %w", err)
 	}
-	receiverConn, err := net.DialUDP("udp", nil, receiverAddr)
-	if err != nil {
-		c.Close()
-		return fmt.Errorf("error creating receiver UDP connection: %w", err)
-	}
-	c.receiverConn = receiverConn
-	c.SafeLog("Receiver UDP connection established.")
 
+	// Запускаем обработчики пакетов
 	c.StartPacketHandlers()
 
-	c.wg.Add(1)
-	go c.runPacketListener()
-	c.wg.Add(1)
-
-	assocReq, err := packages.NewAssociationRequest().MarshalBinary()
-	if err != nil {
-		c.Close()
-		return fmt.Errorf("error creating AssociationRequest message: %w", err)
+	// Отправляем Association Request
+	if err := c.sendAssociationRequest(); err != nil {
+		return fmt.Errorf("failed to send Association Request: %w", err)
 	}
-	_, err = c.conn.Write(assocReq)
-	if err != nil {
-		c.Close()
-		return fmt.Errorf("error sending AssociationRequest: %w", err)
-	}
-	c.SafeLog("AssociationRequest sent. Waiting for response...")
 
+	// Ждем ответа на Association Request
 	assocReceived := false
 	mdsReceived := false
-	mdsCreateChan := make(chan struct{}, 1)
 	timeout := time.After(5 * time.Second)
-
-	// Устанавливаем временный обработчик
-	c.mdsCreateHandler = func() {
-		select {
-		case mdsCreateChan <- struct{}{}:
-		case <-c.ctx.Done():
-		}
-	}
-	defer func() {
-		c.mdsCreateHandler = nil
-	}()
 
 	for !assocReceived || !mdsReceived {
 		select {
 		case <-c.assocResponseChan:
-			if !assocReceived {
-				c.SafeLog("Association Response received")
-				assocReceived = true
-			}
-		case <-mdsCreateChan:
-			if !mdsReceived {
-				c.SafeLog("MDSCreateEvent received")
-				mdsReceived = true
-			}
+			assocReceived = true
+			c.SafeLog("Association Response received")
+		case <-c.mdsCreateChan:
+			mdsReceived = true
+			c.SafeLog("MDSCreateEvent received")
 		case <-timeout:
-			c.Close()
-			if !assocReceived {
-				return fmt.Errorf("timeout waiting for Association Response")
-			}
-			if !mdsReceived {
-				return fmt.Errorf("timeout waiting for MDSCreateEvent")
-			}
+			return fmt.Errorf("timeout waiting for Association Response or MDSCreateEvent")
 		case <-c.ctx.Done():
-			return fmt.Errorf("connection cancelled")
+			return fmt.Errorf("context canceled while waiting for Association Response")
 		}
 	}
 
@@ -233,4 +182,52 @@ func (c *ComputerClient) SafeLog(format string, args ...interface{}) {
 	c.printMu.Lock()
 	defer c.printMu.Unlock()
 	log.Printf(format, args...)
+}
+
+func (c *ComputerClient) connectUDP() error {
+	c.SafeLog("Trying to establish UDP connection with %s", c.monitorAddr)
+	udpAddr, err := net.ResolveUDPAddr("udp", c.monitorAddr)
+	if err != nil {
+		return fmt.Errorf("error resolving UDP address: %w", err)
+	}
+	conn, err := net.DialUDP("udp", nil, udpAddr)
+	if err != nil {
+		return fmt.Errorf("error creating UDP connection: %w", err)
+	}
+	c.conn = conn
+	c.SafeLog("UDP connection established.")
+
+	receiverAddr, err := net.ResolveUDPAddr("udp", c.receiverAddr)
+	if err != nil {
+		c.Close()
+		return fmt.Errorf("error resolving receiver UDP address: %w", err)
+	}
+	receiverConn, err := net.DialUDP("udp", nil, receiverAddr)
+	if err != nil {
+		c.Close()
+		return fmt.Errorf("error creating receiver UDP connection: %w", err)
+	}
+	c.receiverConn = receiverConn
+	c.SafeLog("Receiver UDP connection established.")
+
+	c.wg.Add(1)
+	go c.runPacketListener()
+	c.wg.Add(1)
+
+	return nil
+}
+
+func (c *ComputerClient) sendAssociationRequest() error {
+	assocReq, err := packages.NewAssociationRequest().MarshalBinary()
+	if err != nil {
+		c.Close()
+		return fmt.Errorf("error creating AssociationRequest message: %w", err)
+	}
+	_, err = c.conn.Write(assocReq)
+	if err != nil {
+		c.Close()
+		return fmt.Errorf("error sending AssociationRequest: %w", err)
+	}
+	c.SafeLog("AssociationRequest sent. Waiting for response...")
+	return nil
 }

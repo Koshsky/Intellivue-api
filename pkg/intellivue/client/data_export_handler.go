@@ -62,6 +62,17 @@ func (c *ComputerClient) roerHandler() {
 			return
 		case data := <-c.roerChan:
 			c.SafeLog("ROER handler: received data, length: %d", len(data))
+			if len(data) < 6 {
+				continue
+			}
+			roType := binary.BigEndian.Uint16(data[4:6])
+			if roType == base.ROER_APDU {
+				select {
+				case c.assocResponseChan <- struct{}{}:
+				case <-c.ctx.Done():
+					return
+				}
+			}
 		}
 	}
 }
@@ -87,10 +98,12 @@ func (c *ComputerClient) roivHandler() {
 			switch commandType {
 			case base.CMD_CONFIRMED_EVENT_REPORT:
 				c.SafeLog("Received MDSCreateEvent")
-				if c.mdsCreateHandler != nil {
-					c.mdsCreateHandler()
+				select {
+				case c.mdsCreateChan <- struct{}{}:
+				case <-c.ctx.Done():
+					c.SafeLog("Context done while sending MDSCreateEvent signal")
 				}
-				createResult := packages.NewMDSCreateResult()
+				createResult := packages.NewMdsCreateEventResult()
 				resultBytes, err := createResult.MarshalBinary()
 				if err != nil {
 					c.SafeLog("Failed to marshal MDSCreateResult: %v", err)

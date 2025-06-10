@@ -58,7 +58,7 @@ func (o *PollProfileExt) UnmarshalBinary(r io.Reader) error {
 		return fmt.Errorf("failed to unmarshal Options: %v", err)
 	}
 
-	o.ExtAttr = &AttributeList{} // TODO: определить/импортировать AttributeList
+	o.ExtAttr = &AttributeList{}
 	if err := o.ExtAttr.UnmarshalBinary(r); err != nil {
 		return fmt.Errorf("failed to unmarshal ExtAttr: %v", err)
 	}
