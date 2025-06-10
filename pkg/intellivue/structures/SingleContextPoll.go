@@ -3,6 +3,7 @@ package structures
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -16,6 +17,10 @@ type SingleContextPoll struct {
 	Count     uint16            `json:"count"`
 	Length    uint16            `json:"length"`
 	PollInfo  []ObservationPoll `json:"poll_info"`
+}
+
+func (sp *SingleContextPoll) MarshalJSON() ([]byte, error) {
+	return json.Marshal(sp.PollInfo)
 }
 
 func (sp *SingleContextPoll) Size() uint16 {

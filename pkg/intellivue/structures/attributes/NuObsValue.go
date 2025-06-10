@@ -3,6 +3,7 @@ package attributes
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -14,8 +15,18 @@ import (
 type NuObsValue struct {
 	PhysioID base.OIDType     `json:"physio_id"`
 	State    base.MeasureMode `json:"state"`
-	UnitCode base.OIDType     `json:"unit_code"`
+	UnitCode base.OIDType     `json:"-"`
 	Value    base.FLOATType   `json:"value"`
+}
+
+func (n *NuObsValue) MarshalJSON() ([]byte, error) {
+	unit := base.UnitCodes[n.UnitCode]
+	return json.Marshal(map[string]interface{}{
+		"physio_id": n.PhysioID,
+		"state":     n.State,
+		"value":     n.Value,
+		"unit":      unit,
+	})
 }
 
 func (n *NuObsValue) Size() uint16 {

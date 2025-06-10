@@ -3,6 +3,7 @@ package attributes
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -80,4 +81,15 @@ func (a *AttributeList) ShowInfo(indentationLevel int) {
 	for _, ava := range a.Value {
 		ava.ShowInfo(indentationLevel + 1)
 	}
+}
+
+func (a *AttributeList) MarshalJSON() ([]byte, error) {
+	// Фильтруем атрибуты, исключая те, у которых значение является HexBytes
+	filteredAttrs := make([]AVAType, 0, len(a.Value))
+	for _, attr := range a.Value {
+		if _, ok := attr.Value.(*HexBytes); !ok {
+			filteredAttrs = append(filteredAttrs, attr)
+		}
+	}
+	return json.Marshal(filteredAttrs)
 }

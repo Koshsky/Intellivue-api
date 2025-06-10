@@ -39,7 +39,8 @@ func (a *NuObsValCmp) MarshalBinary() ([]byte, error) {
 	for _, ava := range a.Value {
 		avaData, err := ava.MarshalBinary()
 		if err != nil {
-			return nil, fmt.Errorf("failed to marshal NuObsValue: %w", err)
+			log.Printf("failed to marshal NuObsValue: %s", err)
+			continue
 		}
 		buf.Write(avaData)
 	}

@@ -184,6 +184,8 @@ func (c *ComputerClient) rolrsHandler() {
 				continue
 			}
 
+			c.SafeLog("JSON: %s", string(jsonBytes))
+
 			if c.receiverConn != nil {
 				connMu.Lock()
 				if _, err := c.receiverConn.Write(jsonBytes); err != nil {

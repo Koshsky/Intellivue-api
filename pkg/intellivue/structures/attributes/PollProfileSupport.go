@@ -35,12 +35,7 @@ func (p *PollProfileSupport) ShowInfo(indentationLevel int) {
 }
 
 func (p PollProfileSupport) Size() uint16 {
-	size := uint16(24)
-
-	size += p.OptionalPackages.Size()
-	log.Printf("Size of PollProfileSupport: %d bytes\n", size)
-
-	return size
+	return uint16(24) + p.OptionalPackages.Size()
 }
 
 func (p PollProfileSupport) MarshalBinary() ([]byte, error) {
