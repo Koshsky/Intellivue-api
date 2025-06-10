@@ -3,6 +3,7 @@ package structures
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -15,6 +16,10 @@ import (
 type ObservationPoll struct {
 	Handle     base.Handle               `json:"handle"`
 	Attributes *attributes.AttributeList `json:"attributes"`
+}
+
+func (o *ObservationPoll) MarshalJSON() ([]byte, error) {
+	return json.Marshal(o.Attributes)
 }
 
 func (o *ObservationPoll) Size() uint16 {

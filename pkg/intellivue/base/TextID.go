@@ -3,7 +3,6 @@ package base
 import (
 	"bytes"
 	"encoding/binary"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -11,11 +10,7 @@ import (
 )
 
 type TextID struct {
-	Value uint32
-}
-
-func (t TextID) MarshalJSON() ([]byte, error) {
-	return json.Marshal(t.Value)
+	Value uint32 `json:"label_id"`
 }
 
 func (t *TextID) Size() uint16 {

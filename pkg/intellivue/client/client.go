@@ -23,6 +23,7 @@ type ComputerClient struct {
 	rorsChan      chan []byte
 	rolrsChan     chan []byte
 	roerChan      chan []byte
+	jsonChan      chan []byte
 	mdsCreateChan chan struct{}
 
 	ctx    context.Context
@@ -43,6 +44,7 @@ func NewComputerClient(monitorAddr, receiverAddr string) *ComputerClient {
 		rorsChan:          make(chan []byte, 100),
 		rolrsChan:         make(chan []byte, 100),
 		roerChan:          make(chan []byte, 100),
+		jsonChan:          make(chan []byte, 100),
 		ctx:               ctx,
 		cancel:            cancel,
 		assocResponseChan: make(chan struct{}, 1),
@@ -51,7 +53,9 @@ func NewComputerClient(monitorAddr, receiverAddr string) *ComputerClient {
 }
 
 func (c *ComputerClient) Connect(ctx context.Context) error {
-	c.ctx, c.cancel = context.WithCancel(ctx)
+	// Используем переданный контекст только для установки соединения
+	connectCtx, connectCancel := context.WithTimeout(ctx, 5*time.Second)
+	defer connectCancel()
 
 	if err := c.connectUDP(); err != nil {
 		return fmt.Errorf("failed to establish UDP connection: %w", err)
@@ -68,7 +72,6 @@ func (c *ComputerClient) Connect(ctx context.Context) error {
 	// Ждем ответа на Association Request
 	assocReceived := false
 	mdsReceived := false
-	timeout := time.After(5 * time.Second)
 
 	for !assocReceived || !mdsReceived {
 		select {
@@ -78,10 +81,8 @@ func (c *ComputerClient) Connect(ctx context.Context) error {
 		case <-c.mdsCreateChan:
 			mdsReceived = true
 			c.SafeLog("MDSCreateEvent received")
-		case <-timeout:
+		case <-connectCtx.Done():
 			return fmt.Errorf("timeout waiting for Association Response or MDSCreateEvent")
-		case <-c.ctx.Done():
-			return fmt.Errorf("context canceled while waiting for Association Response")
 		}
 	}
 

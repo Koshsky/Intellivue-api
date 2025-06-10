@@ -12,8 +12,8 @@ import (
 // Attribute: Device P-Alarm List
 // Attribute: Device T-Alarm List
 type DevAlarmList struct {
-	Count  uint16          `json:"count"`
-	Length uint16          `json:"length"`
+	Count  uint16          `json:"-"`
+	Length uint16          `json:"-"`
 	Entry  []DevAlarmEntry `json:"entries"`
 }
 

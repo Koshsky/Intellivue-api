@@ -3,6 +3,7 @@ package attributes
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -14,6 +15,15 @@ import (
 type TYPE struct {
 	Partition base.NomPartition `json:"partition"`
 	Code      base.OIDType      `json:"code"`
+}
+
+func (t *TYPE) MarshalJSON() ([]byte, error) {
+	return json.Marshal(map[string]interface{}{
+		"type": map[string]interface{}{
+			"partition": t.Partition,
+			"code":      t.Code,
+		},
+	})
 }
 
 func (t *TYPE) Size() uint16 {

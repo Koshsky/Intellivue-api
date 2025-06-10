@@ -7,7 +7,7 @@ import (
 const (
 	NUMERIC_POLL_INTERVAL  = 1500 * time.Millisecond
 	ALARM_POLL_INTERVAL    = 1500 * time.Millisecond
-	WAVEFORM_POLL_INTERVAL = 5 * time.Second
+	WAVEFORM_POLL_INTERVAL = 5000 * time.Second
 )
 
 func (c *ComputerClient) CollectNumerics() {

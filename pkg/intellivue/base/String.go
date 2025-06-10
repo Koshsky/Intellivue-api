@@ -37,7 +37,9 @@ type String struct {
 }
 
 func (s String) MarshalJSON() ([]byte, error) {
-	return json.Marshal(s.Value)
+	return json.Marshal(map[string]interface{}{
+		"label": s.Value,
+	})
 }
 
 func (s *String) Size() uint16 {

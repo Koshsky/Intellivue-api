@@ -10,11 +10,23 @@ import (
 	"github.com/Koshsky/Intellivue-api/pkg/intellivue/packages"
 )
 
+const (
+	RORLS_FIRST              uint8 = 0x0001 // set in the first message
+	RORLS_NOT_FIRST_NOT_LAST uint8 = 0x0002
+	RORLS_LAST               uint8 = 0x0003 // last RORLSapdu, one RORSapdu to follow
+)
+
+type rolrsGroup struct {
+	invokeID uint16
+	results  []*packages.SinglePollDataResultLinked
+}
+
 func (c *ComputerClient) StartPacketHandlers() {
 	go c.roivHandler()
 	go c.rorsHandler()
 	go c.rolrsHandler()
 	go c.roerHandler()
+	go c.jsonHandler()
 }
 
 func (c *ComputerClient) handleDataExportPacket(data []byte) {
@@ -125,7 +137,6 @@ func (c *ComputerClient) roivHandler() {
 }
 
 func (c *ComputerClient) rorsHandler() {
-	var connMu sync.Mutex
 	c.SafeLog("RORS handler started")
 	for {
 		select {
@@ -141,29 +152,21 @@ func (c *ComputerClient) rorsHandler() {
 				continue
 			}
 
-			jsonBytes, err := json.MarshalIndent(result.GetPollInfoList(), "", "  ")
+			jsonBytes, err := json.Marshal(result.GetPollInfoList())
 			if err != nil {
 				c.SafeLog("Failed to marshal PollInfoList to JSON: %v", err)
 				continue
 			}
+			c.jsonChan <- jsonBytes
 
-			if c.receiverConn != nil {
-				connMu.Lock()
-				if _, err := c.receiverConn.Write(jsonBytes); err != nil {
-					c.SafeLog("Failed to send data to receiver: %v", err)
-					connMu.Unlock()
-					continue
-				}
-				connMu.Unlock()
-				c.SafeLog("Data sent to receiver %s", c.receiverAddr)
-			}
 		}
 	}
 }
 
 func (c *ComputerClient) rolrsHandler() {
-	var connMu sync.Mutex
 	c.SafeLog("ROLRS handler started")
+	groups := make(map[uint16]*rolrsGroup)
+
 	for {
 		select {
 		case <-c.ctx.Done():
@@ -172,29 +175,67 @@ func (c *ComputerClient) rolrsHandler() {
 		case data := <-c.rolrsChan:
 			c.SafeLog("ROLRS handler: received data, length: %d", len(data))
 			c.SafeLog("Data Export Protocol: ROLRS_APDU")
+
+			if len(data) < 12 {
+				c.SafeLog("ROLRS_APDU packet too short")
+				continue
+			}
+			invokeID := binary.BigEndian.Uint16(data[10:12])
+
 			result := &pollDataResultLinkedWrapper{result: &packages.SinglePollDataResultLinked{}}
 			if err := result.UnmarshalBinary(bytes.NewReader(data)); err != nil {
 				c.SafeLog("Failed to unmarshal ROLRS_APDU: %v", err)
 				continue
 			}
 
-			jsonBytes, err := json.MarshalIndent(result.GetPollInfoList(), "", "  ")
-			if err != nil {
-				c.SafeLog("Failed to marshal PollInfoList to JSON: %v", err)
-				continue
+			rolrsType := result.result.ROLRSapdu.LinkedID.State
+			c.SafeLog("ROLRS type: %d for invoke_id: %d", rolrsType, invokeID)
+
+			group, exists := groups[invokeID]
+			if !exists {
+				group = &rolrsGroup{
+					invokeID: invokeID,
+					results:  make([]*packages.SinglePollDataResultLinked, 0),
+				}
+				groups[invokeID] = group
 			}
 
-			c.SafeLog("JSON: %s", string(jsonBytes))
+			group.results = append(group.results, result.result)
 
-			if c.receiverConn != nil {
-				connMu.Lock()
-				if _, err := c.receiverConn.Write(jsonBytes); err != nil {
-					c.SafeLog("Failed to send data to receiver: %v", err)
-					connMu.Unlock()
+			if rolrsType == RORLS_LAST {
+				c.SafeLog("Received last ROLRS packet for invoke_id: %d", invokeID)
+
+				var combinedAttributes []interface{}
+				for _, res := range group.results {
+					if res.PollMdibDataReply.PollInfoList != nil {
+						jsonBytes, err := json.Marshal(res.PollMdibDataReply.PollInfoList)
+						if err != nil {
+							c.SafeLog("Failed to marshal PollInfoList: %v", err)
+							continue
+						}
+
+						var nestedData []interface{}
+						if err := json.Unmarshal(jsonBytes, &nestedData); err != nil {
+							c.SafeLog("Failed to unmarshal for flattening: %v", err)
+							continue
+						}
+
+						for _, item := range nestedData {
+							if itemList, ok := item.([]interface{}); ok {
+								combinedAttributes = append(combinedAttributes, itemList...)
+							}
+						}
+					}
+				}
+
+				jsonBytes, err := json.Marshal(combinedAttributes)
+				if err != nil {
+					c.SafeLog("Failed to marshal combined PollInfoList to JSON: %v", err)
 					continue
 				}
-				connMu.Unlock()
-				c.SafeLog("Data sent to receiver %s", c.receiverAddr)
+				c.jsonChan <- jsonBytes
+
+				delete(groups, invokeID)
 			}
 		}
 	}

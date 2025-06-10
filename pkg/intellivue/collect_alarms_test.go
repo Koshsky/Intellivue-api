@@ -11,17 +11,17 @@ import (
 func TestCollectAlarms(t *testing.T) {
 	client := client.NewComputerClient("192.168.247.101:24105", "192.168.247.100:80")
 
-	ctxTest, cancelTest := context.WithTimeout(context.Background(), 20*time.Second)
+	// Создаем контекст с таймаутом только для установки соединения
+	connectCtx, connectCancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer connectCancel()
 
-	if err := client.Connect(ctxTest); err != nil {
-		cancelTest()
-		t.Fatalf("error when establishing connectionы: %v", err)
+	if err := client.Connect(connectCtx); err != nil {
+		t.Fatalf("error when establishing connection: %v", err)
 	}
 
+	// После успешного соединения используем бесконечный контекст
 	client.CollectAlarms()
 
-	<-ctxTest.Done()
-
-	time.Sleep(100 * time.Millisecond)
-	cancelTest()
+	// Ждем бесконечно, так как контекст не должен отменяться
+	select {}
 }

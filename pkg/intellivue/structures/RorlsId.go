@@ -9,12 +9,6 @@ import (
 	"strings"
 )
 
-const (
-	RORLS_FIRST              uint8 = 0x0001 // set in the first message
-	RORLS_NOT_FIRST_NOT_LAST uint8 = 0x0002
-	RORLS_LAST               uint8 = 0x0003 // last RORLSapdu, one RORSapdu to follow
-)
-
 type RorlsId struct {
 	State uint8 `json:"state"`
 	Count uint8 `json:"count"`

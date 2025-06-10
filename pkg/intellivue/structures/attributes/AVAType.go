@@ -3,6 +3,7 @@ package attributes
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -22,6 +23,10 @@ type AVAType struct {
 	AttributeID base.OIDType   `json:"attribute_id"`
 	Length      uint16         `json:"length"`
 	Value       AttributeValue `json:"value"`
+}
+
+func (a *AVAType) MarshalJSON() ([]byte, error) {
+	return json.Marshal(a.Value)
 }
 
 func (a *AVAType) Size() uint16 {
@@ -71,6 +76,12 @@ func (a *AVAType) UnmarshalBinary(r io.Reader) error {
 			return fmt.Errorf("failed to unmarshal DevAlarmList: %w", err)
 		}
 		val = condition
+	case base.NOM_ATTR_ID_TYPE:
+		obj := &TYPE{}
+		if err := obj.UnmarshalBinary(io.LimitReader(r, int64(a.Length))); err != nil {
+			return fmt.Errorf("failed to unmarshal DevAlarmList: %w", err)
+		}
+		val = obj
 	case base.NOM_ATTR_ID_LABEL_STRING:
 		obj := &base.String{}
 		if err := obj.UnmarshalBinary(lr); err != nil {

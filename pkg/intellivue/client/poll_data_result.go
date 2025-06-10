@@ -31,7 +31,6 @@ func (w *pollDataResultWrapper) GetPollInfoList() interface{} {
 	return w.result.PollMdibDataReply.PollInfoList
 }
 
-// pollDataResultLinkedWrapper обертка для SinglePollDataResultLinked
 type pollDataResultLinkedWrapper struct {
 	result *packages.SinglePollDataResultLinked
 }

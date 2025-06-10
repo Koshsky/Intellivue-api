@@ -3,6 +3,7 @@ package attributes
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -17,6 +18,13 @@ type MetricSpec struct {
 	Access       base.MetricAccess    `json:"access"`
 	Structure    base.MetricStructure `json:"structure"`
 	Relevance    base.MetricRelevance `json:"relevance"`
+}
+
+func (ms *MetricSpec) MarshalJSON() ([]byte, error) {
+	return json.Marshal(map[string]interface{}{
+		"update_period": ms.UpdatePeriod,
+		"category":      ms.Category,
+	})
 }
 
 func (ms *MetricSpec) Size() uint16 {

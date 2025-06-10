@@ -3,6 +3,7 @@ package attributes
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -13,6 +14,12 @@ type NuObsValCmp struct {
 	Count  uint16       `json:"count"`
 	Length uint16       `json:"length"`
 	Value  []NuObsValue `json:"value"`
+}
+
+func (a *NuObsValCmp) MarshalJSON() ([]byte, error) {
+	return json.Marshal(map[string]interface{}{
+		"val_list": a.Value,
+	})
 }
 
 func (a *NuObsValCmp) Size() uint16 {

@@ -84,12 +84,27 @@ func (a *AttributeList) ShowInfo(indentationLevel int) {
 }
 
 func (a *AttributeList) MarshalJSON() ([]byte, error) {
-	// Фильтруем атрибуты, исключая те, у которых значение является HexBytes
-	filteredAttrs := make([]AVAType, 0, len(a.Value))
+	attrsMap := make(map[string]interface{})
+
 	for _, attr := range a.Value {
-		if _, ok := attr.Value.(*HexBytes); !ok {
-			filteredAttrs = append(filteredAttrs, attr)
+		if _, ok := attr.Value.(*HexBytes); ok {
+			continue
+		}
+
+		valueBytes, err := json.Marshal(attr.Value)
+		if err != nil {
+			continue
+		}
+
+		var valueMap map[string]interface{}
+		if err := json.Unmarshal(valueBytes, &valueMap); err != nil {
+			continue
+		}
+
+		for k, v := range valueMap {
+			attrsMap[k] = v
 		}
 	}
-	return json.Marshal(filteredAttrs)
+
+	return json.Marshal(attrsMap)
 }

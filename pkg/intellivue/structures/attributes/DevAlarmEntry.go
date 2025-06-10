@@ -106,7 +106,7 @@ func (d *DevAlarmEntry) MarshalJSON() ([]byte, error) {
 		// "alert_info_id"
 		// "priority"
 		"flags": d.Info.Flags,
-		"value": d.Info.String,
+		"value": d.Info.String.Value,
 	}
 	return json.Marshal(jsonData)
 }
