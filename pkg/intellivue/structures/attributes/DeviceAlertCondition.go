@@ -13,7 +13,7 @@ import (
 
 type DeviceAlertCondition struct {
 	DeviceAlertState base.AlertState `json:"device_alert_state"`
-	AlertStateChgCnt uint16          `json:"al_stat_chg_cnt"`
+	AlertStateChgCnt uint16          `json:"-"`
 	MaxPAlarm        base.AlertType  `json:"max_p_alarm"`
 	MaxTAlarm        base.AlertType  `json:"max_t_alarm"`
 	MaxAudAlarm      base.AlertType  `json:"max_aud_alarm"`
