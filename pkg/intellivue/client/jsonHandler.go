@@ -1,9 +1,11 @@
 package client
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"sync"
+	"time"
 )
 
 func (c *ComputerClient) flattenJSONData(data []byte) ([]byte, error) {
@@ -38,6 +40,13 @@ func (c *ComputerClient) flattenJSONData(data []byte) ([]byte, error) {
 
 func (c *ComputerClient) jsonHandler() {
 	c.SafeLog("JSON handler started")
+
+	const maxBufferSize = 1024 * 1024 // 1MB
+	buffer := make([]byte, 0, maxBufferSize)
+
+	flushTimer := time.NewTimer(100 * time.Millisecond)
+	defer flushTimer.Stop()
+
 	var connMu sync.Mutex
 	for {
 		select {
@@ -53,16 +62,55 @@ func (c *ComputerClient) jsonHandler() {
 				continue
 			}
 
-			if c.receiverConn != nil {
+			if len(flatData) <= 2 || string(flatData) == "[]" || string(flatData) == "{}" {
+				c.SafeLog("Skipping empty JSON data")
+				continue
+			}
+
+			// Выводим JSON в читаемом формате
+			var prettyJSON bytes.Buffer
+			if err := json.Indent(&prettyJSON, flatData, "", "    "); err != nil {
+				c.SafeLog("Failed to format JSON: %v", err)
+			} else {
+				c.SafeLog("JSON to send:\n%s", prettyJSON.String())
+			}
+
+			if len(buffer)+len(flatData) > maxBufferSize {
+				if c.receiverConn != nil {
+					connMu.Lock()
+					if _, err := c.receiverConn.Write(buffer); err != nil {
+						c.SafeLog("Failed to send buffered data to receiver: %v", err)
+					} else {
+						c.SafeLog("Buffered data sent to receiver %s", c.receiverAddr)
+					}
+					connMu.Unlock()
+				}
+				buffer = buffer[:0]
+			}
+
+			buffer = append(buffer, flatData...)
+			buffer = append(buffer, '\n')
+
+			if !flushTimer.Stop() {
+				select {
+				case <-flushTimer.C:
+				default:
+				}
+			}
+			flushTimer.Reset(100 * time.Millisecond)
+
+		case <-flushTimer.C:
+			if len(buffer) > 0 && c.receiverConn != nil {
 				connMu.Lock()
-				flatData = append(flatData, '\n')
-				if _, err := c.receiverConn.Write(flatData); err != nil {
-					c.SafeLog("Failed to send data to receiver: %v", err)
+				if _, err := c.receiverConn.Write(buffer); err != nil {
+					c.SafeLog("Failed to send buffered data to receiver: %v", err)
 				} else {
-					c.SafeLog("Data sent to receiver %s", c.receiverAddr)
+					c.SafeLog("Buffered data sent to receiver %s", c.receiverAddr)
 				}
 				connMu.Unlock()
+				buffer = buffer[:0]
 			}
+			flushTimer.Reset(100 * time.Millisecond)
 		}
 	}
 }

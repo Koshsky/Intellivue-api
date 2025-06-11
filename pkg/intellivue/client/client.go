@@ -205,8 +205,27 @@ func (c *ComputerClient) connectUDP() error {
 		c.Close()
 		return fmt.Errorf("error creating receiver TCP connection: %w", err)
 	}
+
+	// Отключаем алгоритм Нагла для предотвращения установки флага PSH
+	if err := receiverConn.SetNoDelay(true); err != nil {
+		c.Close()
+		return fmt.Errorf("error setting TCP NoDelay: %w", err)
+	}
+
+	// Увеличиваем размер буфера отправки
+	if err := receiverConn.SetWriteBuffer(1024 * 1024); err != nil {
+		c.Close()
+		return fmt.Errorf("error setting TCP write buffer: %w", err)
+	}
+
+	// Увеличиваем размер буфера чтения
+	if err := receiverConn.SetReadBuffer(1024 * 1024); err != nil {
+		c.Close()
+		return fmt.Errorf("error setting TCP read buffer: %w", err)
+	}
+
 	c.receiverConn = receiverConn
-	c.SafeLog("Receiver TCP connection established.")
+	c.SafeLog("Receiver TCP connection established with NoDelay enabled and increased buffers.")
 
 	c.wg.Add(1)
 	go c.runPacketListener()
