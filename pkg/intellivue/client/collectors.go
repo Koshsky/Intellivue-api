@@ -4,16 +4,8 @@ import (
 	"time"
 )
 
-const (
-	NUMERIC_POLL_INTERVAL  = 1500 * time.Millisecond
-	ALARM_POLL_INTERVAL    = 1500 * time.Millisecond
-	WAVEFORM_POLL_INTERVAL = 5000 * time.Second
-)
-
-func (c *ComputerClient) CollectNumerics() {
+func (c *ComputerClient) CollectNumerics(pollInterval time.Duration) {
 	var invokeID uint16 = 1
-
-	pollInterval := NUMERIC_POLL_INTERVAL
 	ticker := time.NewTicker(pollInterval)
 	defer ticker.Stop()
 
@@ -38,10 +30,8 @@ func (c *ComputerClient) CollectNumerics() {
 	}
 }
 
-func (c *ComputerClient) CollectAlarms() {
+func (c *ComputerClient) CollectAlarms(pollInterval time.Duration) {
 	var invokeID uint16 = 100
-
-	pollInterval := ALARM_POLL_INTERVAL
 	ticker := time.NewTicker(pollInterval)
 	defer ticker.Stop()
 

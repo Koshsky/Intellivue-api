@@ -16,19 +16,15 @@ func (c *ComputerClient) flattenJSONData(data []byte) ([]byte, error) {
 	for _, item := range nestedData {
 		switch v := item.(type) {
 		case []interface{}:
-			// Если элемент - это массив, добавляем все его элементы
 			flatData = append(flatData, v...)
 		case map[string]interface{}:
-			// Если элемент - это объект, добавляем его как есть
 			flatData = append(flatData, v)
 		default:
-			// Для всех остальных типов (строки, числа и т.д.) добавляем как есть
 			flatData = append(flatData, v)
 		}
 	}
 
 	if len(flatData) == 0 {
-		// Если после обработки массив пустой, возвращаем пустой массив в JSON
 		return []byte("[]"), nil
 	}
 
@@ -56,10 +52,10 @@ func (c *ComputerClient) jsonHandler() {
 				c.SafeLog("Failed to flatten JSON data: %v", err)
 				continue
 			}
-			c.SafeLog("JSON: %s", string(flatData))
 
 			if c.receiverConn != nil {
 				connMu.Lock()
+				flatData = append(flatData, '\n')
 				if _, err := c.receiverConn.Write(flatData); err != nil {
 					c.SafeLog("Failed to send data to receiver: %v", err)
 				} else {

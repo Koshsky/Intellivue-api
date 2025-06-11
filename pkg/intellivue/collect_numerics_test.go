@@ -18,7 +18,7 @@ func TestCollectNumerics(t *testing.T) {
 		t.Fatalf("error when establishing connection: %v", err)
 	}
 
-	go client.CollectNumerics()
+	go client.CollectNumerics(1500 * time.Millisecond)
 
 	<-ctxTest.Done()
 }

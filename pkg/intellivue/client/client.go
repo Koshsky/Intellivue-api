@@ -14,7 +14,7 @@ import (
 
 type ComputerClient struct {
 	conn         *net.UDPConn
-	receiverConn *net.UDPConn
+	receiverConn *net.TCPConn
 	monitorAddr  string
 	receiverAddr string
 	printMu      sync.Mutex
@@ -53,7 +53,6 @@ func NewComputerClient(monitorAddr, receiverAddr string) *ComputerClient {
 }
 
 func (c *ComputerClient) Connect(ctx context.Context) error {
-	// Используем переданный контекст только для установки соединения
 	connectCtx, connectCancel := context.WithTimeout(ctx, 5*time.Second)
 	defer connectCancel()
 
@@ -61,15 +60,12 @@ func (c *ComputerClient) Connect(ctx context.Context) error {
 		return fmt.Errorf("failed to establish UDP connection: %w", err)
 	}
 
-	// Запускаем обработчики пакетов
 	c.StartPacketHandlers()
 
-	// Отправляем Association Request
 	if err := c.sendAssociationRequest(); err != nil {
 		return fmt.Errorf("failed to send Association Request: %w", err)
 	}
 
-	// Ждем ответа на Association Request
 	assocReceived := false
 	mdsReceived := false
 
@@ -198,18 +194,19 @@ func (c *ComputerClient) connectUDP() error {
 	c.conn = conn
 	c.SafeLog("UDP connection established.")
 
-	receiverAddr, err := net.ResolveUDPAddr("udp", c.receiverAddr)
+	// Устанавливаем TCP соединение с ресивером
+	tcpAddr, err := net.ResolveTCPAddr("tcp", c.receiverAddr)
 	if err != nil {
 		c.Close()
-		return fmt.Errorf("error resolving receiver UDP address: %w", err)
+		return fmt.Errorf("error resolving receiver TCP address: %w", err)
 	}
-	receiverConn, err := net.DialUDP("udp", nil, receiverAddr)
+	receiverConn, err := net.DialTCP("tcp", nil, tcpAddr)
 	if err != nil {
 		c.Close()
-		return fmt.Errorf("error creating receiver UDP connection: %w", err)
+		return fmt.Errorf("error creating receiver TCP connection: %w", err)
 	}
 	c.receiverConn = receiverConn
-	c.SafeLog("Receiver UDP connection established.")
+	c.SafeLog("Receiver TCP connection established.")
 
 	c.wg.Add(1)
 	go c.runPacketListener()
